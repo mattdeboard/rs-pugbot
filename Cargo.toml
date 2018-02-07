@@ -15,3 +15,6 @@ kankyo = "~0.1"
 log = "~0.3"
 typemap = "0.3"
 rand = "*"
+
+[dev-dependencies]
+stainless = "*"
