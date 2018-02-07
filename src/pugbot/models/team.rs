@@ -39,7 +39,7 @@ impl Key for Team {
 }
 
 impl HasMembers for Team {
-  fn members(&self) -> Vec<User> { self.members }
+  fn members(&self) -> Vec<User> { self.members.clone() }
 
   fn add_member(&mut self, user: User) -> Embed {
     self.members.push(user);

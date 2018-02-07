@@ -12,6 +12,8 @@ pub mod commands;
 pub mod models;
 pub mod traits;
 
+use models::draft_pool::DraftPool;
+use models::game::Game;
 use serenity::framework::StandardFramework;
 use serenity::model::event::ResumedEvent;
 use serenity::model::gateway::Ready;
@@ -20,6 +22,7 @@ use serenity::prelude::*;
 use serenity::http;
 use std::collections::HashSet;
 use std::env;
+use std::marker::PhantomData;
 
 struct Handler;
 
@@ -66,29 +69,27 @@ pub fn client_setup() -> Client {
   let token = env::var("DISCORD_TOKEN")
     .expect("Expected a token in the environment");
   let mut client = Client::new(&token, Handler).expect("Err creating client");
+
   {
     let mut data = client.data.lock();
-    let draft_pool = models::draft_pool::DraftPool { members: Vec::new() };
-    let game = models::game::Game { teams: None, draft_pool: draft_pool };
-    data.insert::<models::game::Game>(game);
+    let draft_pool = DraftPool { members: Vec::new() };
+    let game = Game { teams: None, draft_pool: draft_pool };
+    data.insert::<Game<DraftPool>>(game);
   }
+
   client.with_framework(
     StandardFramework::new()
       .configure(|c| c
                  .owners(bot_owners())
                  .prefix("~"))
       .command("add", |c| c
-               .cmd(commands::add::add)
+               .cmd(commands::add::add::<DraftPool> { phantom: PhantomData })
                .batch_known_as(vec!["a"]))
       .command("remove", |c| c
-               .cmd(commands::remove::remove)
+               .cmd(commands::remove::remove::<DraftPool> { phantom: PhantomData })
                .batch_known_as(vec!["r"])
       )
   );
-
-  if let Err(why) = client.start() {
-    error!("Client error: {:?}", why);
-  }
   client
 }
 
