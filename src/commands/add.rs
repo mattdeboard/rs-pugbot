@@ -4,11 +4,8 @@ use ::models::game::Game;
 use ::traits::has_members::HasMembers;
 
 command!(add(ctx, msg, _args) {
-  fn consume_message(msg: &Message, embed: Embed) {
-    match msg.channel_id.send_message(|m| m.embed(|_| CreateEmbed::from(embed))) {
-      Ok(_) => (),
-      Err(what) => panic!(what)
-    }
+  fn consume_message(msg: &Message, embed: Embed) -> Message {
+    msg.channel_id.send_message(|m| m.embed(|_| CreateEmbed::from(embed))).unwrap()
   }
 
   let mut data = ctx.data.lock();
