@@ -4,6 +4,16 @@ version = "0.1.0"
 authors = ["Matt DeBoard <mdeboard@truecar.com>"]
 features = [ "const_fn" ]
 
+[lib]
+name = "pugbot"
+path = "src/pugbot/lib.rs"
+test = true
+
+[[bin]]
+name = "pugbot"
+path = "src/main.rs"
+test = true
+
 [dependencies]
 diesel = { version = "*", features = ["chrono", "postgres", "serde_json", "huge-tables", "uuid"] }
 diesel_codegen = { version = "*", features = ["postgres"] }
