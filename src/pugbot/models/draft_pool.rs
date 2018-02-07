@@ -43,7 +43,7 @@ impl PoolAvailability for DraftPool {
 
 impl HasMembers for DraftPool {
   fn members(&self) -> Vec<User> {
-    self.members
+    self.members.clone()
   }
 
   fn add_member(&mut self, user: User) -> Embed {
