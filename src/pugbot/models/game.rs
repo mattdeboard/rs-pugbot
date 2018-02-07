@@ -1,5 +1,5 @@
 use ::models::team::Team;
-use ::models::draft_pool::DraftPool;
+use ::traits::pool_availability::PoolAvailability;
 use typemap::Key;
 
 pub struct Game {
