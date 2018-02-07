@@ -15,13 +15,12 @@ mod traits;
 use serenity::framework::StandardFramework;
 use serenity::model::event::ResumedEvent;
 use serenity::model::gateway::Ready;
-use serenity::model::user::User;
 use serenity::prelude::*;
 use serenity::http;
 use std::collections::HashSet;
 use std::env;
 
-use traits::has_members::HasMembers;
+use models::team::Team;
 
 struct Handler;
 
@@ -103,16 +102,16 @@ fn main() {
                  .owners(owners)
                  .prefix("~"))
       .command("add", |c| c
-               .after(|ctx, _, _| {
-                 let mut data = ctx.data.lock();
-                 let game = data.get_mut::<models::game::Game>().unwrap();
-                 let draft_pool = &game.draft_pool;
-                 let teams = &game.teams;
-                 let members = &draft_pool.members;
-                 for t in &game.teams {
-                   teams.push(models::team::Team::with_captain(&t, t.select_captain(&members)))
-                 }
-               })
+               // .after(|ctx, _, _| {
+               //   let mut data = ctx.data.lock();
+               //   let game = data.get_mut::<models::game::Game>().unwrap();
+               //   let draft_pool = &mut game.draft_pool;
+
+               //   if draft_pool.members.len == team_size() * 2 {
+               //     let teams = &mut game.teams;
+               //     let members = &mut draft_pool.members;
+               //   }
+               // })
                .cmd(commands::add::add)
                .batch_known_as(vec!["a"]))
       .command("remove", |c| c

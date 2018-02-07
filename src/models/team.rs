@@ -4,10 +4,12 @@ use rand::{thread_rng, Rng};
 use serenity::model::channel::{ Embed, EmbedFooter };
 use serenity::model::user::User;
 use serenity::utils::Colour;
+use std::clone::Clone;
 use typemap::Key;
 
 use ::traits::has_members::HasMembers;
 
+#[derive(Debug, Clone)]
 pub struct Team {
   pub id: usize,
   pub captain: Option<User>,
@@ -18,7 +20,7 @@ impl Team {
   pub fn select_captain(&self, queue: &Vec<User>) -> Option<User> {
     let mut rng = thread_rng();
     match rng.choose(&queue) {
-      Some(user) => Some(*user),
+      Some(user) => Some(user.clone()),
       None => None
     }
   }
@@ -51,7 +53,7 @@ impl HasMembers for Team {
 
   fn create_embed(&mut self, r: u8, g: u8, b: u8) -> Embed {
     let members = &self.members;
-    let captain = &self.captain;
+
     Embed {
       author: None,
       colour: Colour::from_rgb(r, g, b),
@@ -60,7 +62,7 @@ impl HasMembers for Team {
         icon_url: None,
         proxy_icon_url: None,
         text: match self.captain {
-          Some(ref user) => format!("{} is Team {} Captain", user.clone().name, self.id),
+          Some(ref user) => format!("{} is Team {} Captain", user.name, self.id),
           None => format!("Team {} has no captain, yet", self.id)
         }
       }),
@@ -76,4 +78,3 @@ impl HasMembers for Team {
     }
   }
 }
-
