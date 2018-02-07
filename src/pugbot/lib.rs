@@ -8,9 +8,9 @@ extern crate kankyo;
 extern crate rand;
 extern crate typemap;
 
-mod commands;
-mod models;
-mod traits;
+pub mod commands;
+pub mod models;
+pub mod traits;
 
 use serenity::framework::StandardFramework;
 use serenity::model::event::ResumedEvent;

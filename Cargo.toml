@@ -7,12 +7,11 @@ features = [ "const_fn" ]
 [lib]
 name = "pugbot"
 path = "src/pugbot/lib.rs"
-test = true
 
 [[bin]]
 name = "pugbot"
 path = "src/main.rs"
-test = true
+test = false
 
 [dependencies]
 diesel = { version = "*", features = ["chrono", "postgres", "serde_json", "huge-tables", "uuid"] }
