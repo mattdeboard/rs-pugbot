@@ -1,6 +1,7 @@
 use serenity::model::channel::{ Embed, EmbedFooter };
 use serenity::model::user::User;
 use serenity::utils::Colour;
+use ::traits::pool_availability::*;
 use typemap::Key;
 
 use queue_size;
@@ -10,12 +11,12 @@ pub struct DraftPool {
   pub members: Vec<User>,
 }
 
-impl DraftPool {
-  pub fn is_open(&self) -> bool {
-    (self.members.len() as u32) < queue_size()
+impl PoolAvailability for DraftPool {
+  fn is_open(&self) -> bool {
+    (self.members().len() as u32) < queue_size()
   }
 
-  pub fn members_full_embed(&mut self, r: u8, g: u8, b: u8) -> Embed {
+  fn members_full_embed(&mut self, r: u8, g: u8, b: u8) -> Embed {
     let members = self.members.clone();
 
     Embed {
@@ -41,6 +42,10 @@ impl DraftPool {
 }
 
 impl HasMembers for DraftPool {
+  fn members(&self) -> Vec<User> {
+    self.members
+  }
+
   fn add_member(&mut self, user: User) -> Embed {
     self.members.push(user);
     self.members.dedup();
