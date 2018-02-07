@@ -1,6 +1,9 @@
 use models::team::Team;
+use team_count;
 use rand::{thread_rng, Rng};
 use serenity::model::user::User;
+use std::env;
+use std::ops::Range;
 use traits::pool_availability::PoolAvailability;
 use traits::phased::Phased;
 use typemap::Key;
@@ -57,19 +60,21 @@ impl<T> Phased for Game<T> where T: PoolAvailability {
 }
 
 impl<T> Game<T> where T: PoolAvailability {
-  pub fn select_captains(&mut self) -> Vec<User> {
+  pub fn select_captains(&mut self) {
     let mut rng = thread_rng();
-    let pool = self.draft_pool.members().clone();
-    let teams: Vec<Team> = [1, 2].into_iter().map(|i| {
-      let user: &User = rng.choose(&pool).unwrap();
-      Team {
-        id: *i,
-        captain: Some(user.clone()),
-        members: Vec::new()
-      }
-    }).collect();
-    self.teams = Some(teams.clone());
-    teams.clone().into_iter().map(|team| team.captain.unwrap()).collect()
+    let pool = self.draft_pool.members();
+
+    if let Some(tc) = team_count() {
+      let teams: Vec<Team> = Range { start: 1, end: tc + 1 }.map(|i| {
+        let user: &User = rng.choose(&pool).unwrap();
+        Team {
+          id: (i as usize),
+          captain: Some(user.clone()),
+          members: Vec::new()
+        }
+      }).collect();
+      self.teams = Some(teams.clone());
+    }
   }
 }
 

@@ -50,17 +50,27 @@ fn team_size() -> u32 {
   }
 }
 
-fn queue_size() -> u32 {
+fn team_count() -> Option<u32> {
   kankyo::load().expect("Failed to load .env file");
 
   match env::var("TEAM_COUNT") {
     Ok(size) =>
       if let Ok(num_teams) = size.parse::<u32>() {
-        num_teams * team_size()
+        Some(num_teams)
       } else {
-        panic!("Invalid value for `TEAM_COUNT`");
+        None
       },
-    Err(_) => panic!("No 'TEAM_COUNT' env var found")
+    Err(_) => None
+  }
+}
+
+fn queue_size() -> u32 {
+  kankyo::load().expect("Failed to load .env file");
+
+  if let Some(tc) = team_count() {
+    tc * team_size()
+  } else {
+    panic!("Invalid value for TEAM_COUNT");
   }
 }
 
