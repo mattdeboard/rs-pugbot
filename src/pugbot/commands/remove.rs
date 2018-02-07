@@ -1,10 +1,11 @@
-use serenity::builder::CreateEmbed;
 use serenity::client::Context;
 use serenity::framework::standard::{ Args, Command, CommandError };
-use serenity::model::channel::{ Embed, Message };
+use serenity::model::channel::Message;
 use std::marker::{ PhantomData, Send, Sync };
 use ::traits::pool_availability::PoolAvailability;
 use typemap::Key;
+
+use commands::add::consume_message;
 
 #[allow(non_camel_case_types)]
 pub struct remove<T: Key<Value=T>> {
@@ -19,8 +20,9 @@ impl<T> Command for remove<T> where T: PoolAvailability + Key<Value=T> + Send + 
         let mut data = ctx.data.lock();
         let mut draft_pool = data.get_mut::<T>().unwrap();
         let author = msg.author.clone();
-        let embed: Embed = draft_pool.remove_member(author);
-        msg.channel_id.send_message(|m| m.embed(|_| CreateEmbed::from(embed)));
+        if let Some(embed) = draft_pool.remove_member(author) {
+          consume_message(msg, embed)
+        }
       }
       Ok(())
     }

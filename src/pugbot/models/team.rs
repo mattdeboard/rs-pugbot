@@ -41,22 +41,22 @@ impl Key for Team {
 impl HasMembers for Team {
   fn members(&self) -> Vec<User> { self.members.clone() }
 
-  fn add_member(&mut self, user: User) -> Embed {
+  fn add_member(&mut self, user: User) -> Option<Embed> {
     self.members.push(user);
     self.members.dedup();
     self.members_changed_embed(255, 223, 165)
   }
 
-  fn remove_member(&mut self, user: User) -> Embed {
+  fn remove_member(&mut self, user: User) -> Option<Embed> {
     self.members.retain(|m| m.id != user.id);
     self.members.dedup();
     self.members_changed_embed(255, 223, 165)
   }
 
-  fn members_changed_embed(&mut self, r: u8, g: u8, b: u8) -> Embed {
+  fn members_changed_embed(&mut self, r: u8, g: u8, b: u8) -> Option<Embed> {
     let members = &self.members;
 
-    Embed {
+    Some(Embed {
       author: None,
       colour: Colour::from_rgb(r, g, b),
       description: Some(members.into_iter().map(|m| m.clone().name).collect()),
@@ -77,6 +77,6 @@ impl HasMembers for Team {
       title: Some(format!("Team {} has {} members:", self.id, self.members.len())),
       url: None,
       video: None
-    }
+    })
   }
 }

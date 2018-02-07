@@ -16,10 +16,10 @@ impl PoolAvailability for DraftPool {
     (self.members().len() as u32) < queue_size()
   }
 
-  fn members_full_embed(&mut self, r: u8, g: u8, b: u8) -> Embed {
+  fn members_full_embed(&mut self, r: u8, g: u8, b: u8) -> Option<Embed> {
     let members = self.members.clone();
 
-    Embed {
+    Some(Embed {
       author: None,
       colour: Colour::from_rgb(r, g, b),
       description: Some(members.into_iter().map(|m| m.clone().name).collect()),
@@ -37,7 +37,7 @@ impl PoolAvailability for DraftPool {
       title: Some("Members in queue:".to_string()),
       url: None,
       video: None
-    }
+    })
   }
 }
 
@@ -46,7 +46,7 @@ impl HasMembers for DraftPool {
     self.members.clone()
   }
 
-  fn add_member(&mut self, user: User) -> Embed {
+  fn add_member(&mut self, user: User) -> Option<Embed> {
     self.members.push(user);
     self.members.dedup();
 
@@ -57,16 +57,16 @@ impl HasMembers for DraftPool {
     self.members_changed_embed(165, 255, 241)
   }
 
-  fn remove_member(&mut self, user: User) -> Embed {
+  fn remove_member(&mut self, user: User) -> Option<Embed> {
     self.members.retain(|m| m.id != user.id);
     self.members.dedup();
     self.members_changed_embed(165, 255, 241)
   }
 
-  fn members_changed_embed(&mut self, r: u8, g: u8, b: u8) -> Embed {
+  fn members_changed_embed(&mut self, r: u8, g: u8, b: u8) -> Option<Embed> {
     let members = self.members.clone();
 
-    Embed {
+    Some(Embed {
       author: None,
       colour: Colour::from_rgb(r, g, b),
       description: Some(members.into_iter().map(|m| m.clone().name).collect()),
@@ -84,7 +84,7 @@ impl HasMembers for DraftPool {
       title: Some("Members in queue:".to_string()),
       url: None,
       video: None
-    }
+    })
   }
 }
 

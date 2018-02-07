@@ -11,7 +11,6 @@ use serde::de::Deserialize;
 use serde_json::Value;
 use serenity::model::channel::{ Embed, Message };
 use serenity::model::user::User;
-use serenity::utils::Colour;
 use std::fs::File;
 
 macro_rules! p {
@@ -30,56 +29,24 @@ struct ClosedPool {
 impl traits::has_members::HasMembers for ClosedPool {
   fn members(&self) -> Vec<User> { self.members.clone() }
 
-  fn add_member(&mut self, user: User) -> Embed {
-    self.members_changed_embed(165, 255, 241)
+  fn add_member(&mut self, _user: User) -> Option<Embed> {
+    None
   }
 
-  fn remove_member(&mut self, user: User) -> Embed {
-    self.members_changed_embed(165, 255, 241)
+  fn remove_member(&mut self, _user: User) -> Option<Embed> {
+    None
   }
 
-  fn members_changed_embed(&mut self, r: u8, g: u8, b: u8) -> Embed {
-    let members = self.members();
-
-    Embed {
-      author: None,
-      colour: Colour::from_rgb(r, g, b),
-      description: Some(members.into_iter().map(|m| m.clone().name).collect()),
-      footer: None,
-      fields: Vec::new(),
-      image: None,
-      kind: "rich".to_string(),
-      provider: None,
-      thumbnail: None,
-      timestamp: None,
-      title: Some("Test Embed".to_string()),
-      url: None,
-      video: None
-    }
+  fn members_changed_embed(&mut self, _r: u8, _g: u8, _b: u8) -> Option<Embed> {
+    None
   }
 }
 
 impl traits::pool_availability::PoolAvailability for ClosedPool {
   fn is_open(&self) -> bool { false }
 
-  fn members_full_embed(&mut self, r: u8, g: u8, b: u8) -> Embed {
-    let members = self.members.clone();
-
-    Embed {
-      author: None,
-      colour: Colour::from_rgb(r, g, b),
-      description: Some(members.into_iter().map(|m| m.clone().name).collect()),
-      footer: None,
-      fields: Vec::new(),
-      image: None,
-      kind: "rich".to_string(),
-      provider: None,
-      thumbnail: None,
-      timestamp: None,
-      title: Some("Test Embed".to_string()),
-      url: None,
-      video: None
-    }
+  fn members_full_embed(&mut self, _r: u8, _g: u8, _b: u8) -> Option<Embed> {
+    None
   }
 }
 
