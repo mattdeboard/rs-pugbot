@@ -42,16 +42,16 @@ impl HasMembers for Team {
   fn add_member(&mut self, user: User) -> Embed {
     self.members.push(user);
     self.members.dedup();
-    self.create_embed(255, 223, 165)
+    self.members_changed_embed(255, 223, 165)
   }
 
   fn remove_member(&mut self, user: User) -> Embed {
     self.members.retain(|m| m.id != user.id);
     self.members.dedup();
-    self.create_embed(255, 223, 165)
+    self.members_changed_embed(255, 223, 165)
   }
 
-  fn create_embed(&mut self, r: u8, g: u8, b: u8) -> Embed {
+  fn members_changed_embed(&mut self, r: u8, g: u8, b: u8) -> Embed {
     let members = &self.members;
 
     Embed {
