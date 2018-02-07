@@ -17,7 +17,7 @@ impl PoolAvailability for DraftPool {
   }
 
   fn members_full_embed(&mut self, r: u8, g: u8, b: u8) -> Option<Embed> {
-    let members = self.members.clone();
+    let members = self.members();
 
     Some(Embed {
       author: None,
