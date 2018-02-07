@@ -1,8 +1,7 @@
 use models::team::Team;
 use team_count;
-use rand::{thread_rng, Rng};
+use rand::{ Rng, thread_rng };
 use serenity::model::user::User;
-use std::env;
 use std::ops::Range;
 use traits::pool_availability::PoolAvailability;
 use traits::phased::Phased;
