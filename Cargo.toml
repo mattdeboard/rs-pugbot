@@ -4,14 +4,26 @@ version = "0.1.0"
 authors = ["Matt DeBoard <mdeboard@truecar.com>"]
 features = [ "const_fn" ]
 
+[lib]
+name = "pugbot"
+path = "src/pugbot/lib.rs"
+
+[[bin]]
+name = "pugbot"
+path = "src/main.rs"
+test = false
+
 [dependencies]
-serenity = { git = "https://github.com/zeyla/serenity.git", features = ["cache", "framework", "standard_framework"] }
 diesel = { version = "*", features = ["chrono", "postgres", "serde_json", "huge-tables", "uuid"] }
 diesel_codegen = { version = "*", features = ["postgres"] }
-r2d2-diesel = "*"
-r2d2 = "*"
 env_logger = "~0.4"
 kankyo = "~0.1"
 log = "~0.3"
-typemap = "0.3"
+r2d2 = "*"
+r2d2-diesel = "*"
 rand = "*"
+serde = "^1.0"
+serde_derive = "^1.0"
+serde_json = "^1.0"
+serenity = { git = "https://github.com/zeyla/serenity.git", features = ["cache", "framework", "standard_framework"] }
+typemap = "0.3"
