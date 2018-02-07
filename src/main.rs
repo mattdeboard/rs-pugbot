@@ -118,4 +118,3 @@ fn main() {
     error!("Client error: {:?}", why);
   }
 }
-
