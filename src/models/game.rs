@@ -3,7 +3,7 @@ use ::models::draft_pool::DraftPool;
 use typemap::Key;
 
 pub struct Game {
-  pub teams: Vec<Team>,
+  pub teams: Option<Vec<Team>>,
   pub draft_pool: DraftPool
 }
 

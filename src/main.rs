@@ -20,8 +20,6 @@ use serenity::http;
 use std::collections::HashSet;
 use std::env;
 
-use models::team::Team;
-
 struct Handler;
 
 impl EventHandler for Handler {
@@ -87,12 +85,8 @@ fn main() {
   };
   {
     let mut data = client.data.lock();
-    let teams: Vec<models::team::Team> = vec![1, 2]
-      .into_iter()
-      .map(|i| models::team::Team { id: i, captain: None, members: Vec::new() })
-      .collect();
     let draft_pool = models::draft_pool::DraftPool { members: Vec::new() };
-    let game = models::game::Game { teams: teams, draft_pool: draft_pool };
+    let game = models::game::Game { teams: None, draft_pool: draft_pool };
     data.insert::<models::game::Game>(game);
   }
 
