@@ -1,6 +1,6 @@
 use ::models::team::Team;
 use ::traits::pool_availability::PoolAvailability;
-use std::collections::BTreeMap;
+use std::collections::HashMap;
 use std::sync::{ Arc, Mutex };
 use typemap::Key;
 
@@ -8,7 +8,7 @@ use typemap::Key;
 pub struct Game<T: PoolAvailability> {
   pub teams: Option<Vec<Team>>,
   pub draft_pool: T,
-  phase_map: BTreeMap<i32, Phase>,
+  phase_map: HashMap<i32, Phase>,
   phase: Arc<Mutex<Phase>>
 }
 
@@ -31,8 +31,8 @@ impl<T> Game<T> where T: PoolAvailability {
   }
 }
 
-fn phase_map() -> BTreeMap<i32, Phase> {
-  let mut phase_map = BTreeMap::new();
+fn phase_map() -> HashMap<i32, Phase> {
+  let mut phase_map = HashMap::new();
   phase_map.insert(Phase::PlayerRegistration as i32, Phase::PlayerRegistration);
   phase_map.insert(Phase::CaptainSelection as i32, Phase::CaptainSelection);
   phase_map.insert(Phase::PlayerDrafting as i32, Phase::PlayerDrafting);
