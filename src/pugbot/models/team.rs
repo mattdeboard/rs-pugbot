@@ -1,6 +1,5 @@
 extern crate kankyo;
 
-use rand::{thread_rng, Rng};
 use serenity::model::channel::{ Embed, EmbedFooter };
 use serenity::model::user::User;
 use serenity::utils::Colour;
@@ -14,24 +13,6 @@ pub struct Team {
   pub id: usize,
   pub captain: Option<User>,
   pub members: Vec<User>
-}
-
-impl Team {
-  pub fn select_captain(&self, queue: &Vec<User>) -> Option<User> {
-    let mut rng = thread_rng();
-    match rng.choose(&queue) {
-      Some(user) => Some(user.clone()),
-      None => None
-    }
-  }
-
-  pub fn with_captain(old_team: &Team, captain: Option<User>) -> Team {
-    Team {
-      id: old_team.id,
-      captain: captain,
-      members: old_team.members.clone()
-    }
-  }
 }
 
 impl Key for Team {

@@ -14,7 +14,9 @@ pub mod traits;
 
 use models::draft_pool::DraftPool;
 use models::game::Game;
+use serenity::builder::CreateEmbed;
 use serenity::framework::StandardFramework;
+use serenity::model::channel::{ Embed, Message };
 use serenity::model::event::ResumedEvent;
 use serenity::model::gateway::Ready;
 use serenity::model::id::UserId;
@@ -23,6 +25,7 @@ use serenity::http;
 use std::collections::HashSet;
 use std::env;
 use std::marker::PhantomData;
+use std::ops::Range;
 
 struct Handler;
 
@@ -50,17 +53,32 @@ fn team_size() -> u32 {
   }
 }
 
-fn queue_size() -> u32 {
+fn team_id_range() -> Range<usize> {
+  let tc = team_count().unwrap();
+  Range { start: 1, end: (tc as usize) + 1 }
+}
+
+fn team_count() -> Option<u32> {
   kankyo::load().expect("Failed to load .env file");
 
   match env::var("TEAM_COUNT") {
     Ok(size) =>
       if let Ok(num_teams) = size.parse::<u32>() {
-        num_teams * team_size()
+        Some(num_teams)
       } else {
-        panic!("Invalid value for `TEAM_COUNT`");
+        None
       },
-    Err(_) => panic!("No 'TEAM_COUNT' env var found")
+    Err(_) => None
+  }
+}
+
+fn queue_size() -> u32 {
+  kankyo::load().expect("Failed to load .env file");
+
+  if let Some(tc) = team_count() {
+    tc * team_size()
+  } else {
+    panic!("Invalid value for TEAM_COUNT");
   }
 }
 
@@ -72,9 +90,9 @@ pub fn client_setup() -> Client {
 
   {
     let mut data = client.data.lock();
-    let draft_pool = DraftPool { members: Vec::new() };
+    let draft_pool = DraftPool::new(Vec::new());
     let game = Game::new(None, draft_pool);
-    data.insert::<Game<DraftPool>>(game);
+    data.insert::<Game>(game);
   }
 
   client.with_framework(
@@ -87,10 +105,13 @@ pub fn client_setup() -> Client {
                .batch_known_as(vec!["a"]))
       .command("remove", |c| c
                .cmd(commands::remove::remove::<DraftPool> { phantom: PhantomData })
-               .batch_known_as(vec!["r"])
-      )
+               .batch_known_as(vec!["r"]))
   );
   client
+}
+
+pub fn consume_message(msg: &Message, embed: Embed) {
+  msg.channel_id.send_message(|m| m.embed(|_| CreateEmbed::from(embed))).unwrap();
 }
 
 fn bot_owners() -> HashSet<UserId> {
