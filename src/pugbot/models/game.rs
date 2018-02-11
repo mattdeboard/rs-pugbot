@@ -3,14 +3,12 @@ use traits::pool_availability::PoolAvailability;
 use traits::phased::Phased;
 use typemap::Key;
 
-#[allow(dead_code)]
 pub struct Game<T: PoolAvailability> {
   pub teams: Option<Vec<Team>>,
   pub draft_pool: T,
   phase: Option<Phases>,
 }
 
-#[derive(Debug)]
 pub enum Phases {
   PlayerRegistration,
   CaptainSelection,
@@ -31,7 +29,6 @@ impl<T> Game<T> where T: PoolAvailability {
   pub fn current_phase(&self) -> &Phases {
     self.phase.as_ref().unwrap()
   }
-
 }
 
 impl<T> Phased for Game<T> where T: PoolAvailability {
@@ -54,7 +51,6 @@ impl<T> Phased for Game<T> where T: PoolAvailability {
       _ => None
     };
   }
-
 }
 
 impl<T> Key for Game<T> where T: 'static + PoolAvailability {
