@@ -87,8 +87,10 @@ pub fn client_setup() -> Client {
                .batch_known_as(vec!["a"]))
       .command("remove", |c| c
                .cmd(commands::remove::remove::<DraftPool> { phantom: PhantomData })
-               .batch_known_as(vec!["r"])
-      )
+               .batch_known_as(vec!["r"]))
+      .command("pick", |c| c
+               .cmd(commands::pick::pick)
+               .batch_known_as(vec!["p"]))
   );
   client
 }
