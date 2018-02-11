@@ -2,10 +2,12 @@ use serenity::builder::CreateEmbed;
 use serenity::client::Context;
 use serenity::framework::standard::{ Args, Command, CommandError };
 use serenity::model::channel::{ Embed, Message };
-use std::marker::{ PhantomData, Send, Sync };
-use ::models::game::{ Game, Phases };
-use ::traits::pool_availability::PoolAvailability;
+use serenity::model::user::User;
 use typemap::Key;
+
+use std::marker::{ PhantomData, Send, Sync };
+use models::game::{ Game, Phases };
+use traits::pool_availability::PoolAvailability;
 
 #[allow(non_camel_case_types)]
 pub struct add<T: Key<Value=T>> {
@@ -29,7 +31,7 @@ pub fn update_members<T: PoolAvailability>(
   game: &mut Game<T>,
   msg: &Message,
   send_embed: bool
-) {
+) -> Vec<User> {
   // The `send_embed` parameter exists only as a way to avoid trying to hit the Discord
   // API during testing.
   if game.phase != Some(Phases::PlayerRegistration) {
@@ -46,6 +48,7 @@ pub fn update_members<T: PoolAvailability>(
       }
     }
   }
+  game.draft_pool.members()
 }
 
 pub fn consume_message(msg: &Message, embed: Embed) {

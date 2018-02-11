@@ -30,6 +30,23 @@ impl<T> Game<T> where T: PoolAvailability {
       phase: Some(Phases::PlayerRegistration),
     }
   }
+
+  pub fn select_captains(&mut self) {
+    let mut rng = thread_rng();
+    let pool = self.draft_pool.members();
+
+    if let Some(tc) = team_count() {
+      let teams: Vec<Team> = Range { start: 1, end: tc + 1 }.map(|i| {
+        let user: &User = rng.choose(&pool).unwrap();
+        Team {
+          id: (i as usize),
+          captain: Some(user.clone()),
+          members: Vec::new()
+        }
+      }).collect();
+      self.teams = Some(teams.clone());
+    }
+  }
 }
 
 impl<T> Phased for Game<T> where T: PoolAvailability {
@@ -55,25 +72,6 @@ impl<T> Phased for Game<T> where T: PoolAvailability {
 
   fn reset_phase(&mut self) {
     self.phase = Some(Phases::PlayerRegistration);
-  }
-}
-
-impl<T> Game<T> where T: PoolAvailability {
-  pub fn select_captains(&mut self) {
-    let mut rng = thread_rng();
-    let pool = self.draft_pool.members();
-
-    if let Some(tc) = team_count() {
-      let teams: Vec<Team> = Range { start: 1, end: tc + 1 }.map(|i| {
-        let user: &User = rng.choose(&pool).unwrap();
-        Team {
-          id: (i as usize),
-          captain: Some(user.clone()),
-          members: Vec::new()
-        }
-      }).collect();
-      self.teams = Some(teams.clone());
-    }
   }
 }
 
