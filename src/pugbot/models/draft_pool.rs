@@ -1,11 +1,11 @@
 use serenity::model::channel::{ Embed, EmbedFooter };
 use serenity::model::user::User;
 use serenity::utils::Colour;
-use ::traits::pool_availability::*;
 use typemap::Key;
 
 use queue_size;
-use ::traits::has_members::HasMembers;
+use traits::has_members::HasMembers;
+use traits::pool_availability::*;
 
 pub struct DraftPool {
   pub members: Vec<User>,
