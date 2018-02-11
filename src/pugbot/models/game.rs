@@ -1,18 +1,20 @@
 use models::draft_pool::DraftPool;
 use models::team::Team;
-use team_count;
 use rand::{ Rng, thread_rng };
-use serenity::model::user::User;
+use serenity::model::channel::{ Embed };
+use serenity::utils::Colour;
+use std::iter::Cycle;
 use std::ops::Range;
-use traits::has_members::HasMembers;
 use traits::phased::Phased;
 use typemap::Key;
-use std::collections::HashMap;
+use team_id_range;
 
 pub struct Game {
   pub teams: Option<Vec<Team>>,
   pub draft_pool: DraftPool,
   pub phase: Option<Phases>,
+  pub turn_taker: Cycle<Range<usize>>,
+  pub turn_number: usize
 }
 
 #[derive(PartialEq, Debug)]
@@ -30,6 +32,22 @@ impl Game {
       teams: teams,
       draft_pool: draft_pool,
       phase: Some(Phases::PlayerRegistration),
+      turn_taker: team_id_range().cycle(),
+      turn_number: 1
+    }
+  }
+
+  pub fn next_team_to_draft(&mut self) -> Team {
+    let next_team = self.turn_taker.next().unwrap();
+    {
+      self.team_by_id(next_team).unwrap()
+    }
+  }
+
+  pub fn team_by_id(&self, id: usize) -> Option<Team> {
+    match self.teams {
+      Some(ref teams) => teams.iter().find(|t| t.id == id).cloned(),
+      None => None
     }
   }
 
@@ -40,8 +58,7 @@ impl Game {
 
     let mut rng = thread_rng();
     let pool = self.draft_pool.available_players.clone();
-    let tc = team_count().unwrap();
-    let teams: Vec<Team> = (Range { start: 1, end: tc + 1 })
+    let teams: Vec<Team> = team_id_range()
       .map(
         |i| {
           let keys: Vec<&usize> = pool.keys().collect();
@@ -49,7 +66,7 @@ impl Game {
 
           if let Some(user) = self.draft_pool.pop_available_player(random_key) {
             Some(Team {
-              id: (i as usize),
+              id: i,
               captain: Some(user.clone()),
               members: vec![user]
             })
@@ -63,23 +80,49 @@ impl Game {
       .collect();
 
     self.teams = Some(teams.clone());
-
-    if self.phase == Some(Phases::PlayerRegistration) {
-      self.next_phase();
-    }
+    self.next_phase();
     Ok(())
+  }
+
+  pub fn drafting_complete_embed(&mut self, r: u8, g: u8, b: u8) -> Option<Embed> {
+    let roster: Vec<String> = self.teams.clone().unwrap().iter().map(|team| {
+      let member_names: Vec<String> = team.members.iter().map(|user| user.clone().name).collect();
+      format!("Team {} roster:\n{}", team.id, member_names.join("\n"))
+    }).collect();
+
+    Some(Embed {
+      author: None,
+      colour: Colour::from_rgb(r, g, b),
+      description: Some(roster.join("\n---\n")),
+      footer: None,
+      fields: Vec::new(),
+      image: None,
+      kind: "rich".to_string(),
+      provider: None,
+      thumbnail: None,
+      timestamp: None,
+      title: Some(String::from("Drafting has been completed!")),
+      url: None,
+      video: None
+    })
+
   }
 }
 
 impl Phased for Game {
   fn next_phase(&mut self ) {
-    {
-      self.draft_pool.generate_available_players();
-    }
     self.phase = match self.phase {
-      Some(Phases::PlayerRegistration) => Some(Phases::CaptainSelection),
+      Some(Phases::PlayerRegistration) => {
+        self.draft_pool.generate_available_players();
+        self.draft_pool.members = Vec::new();
+        Some(Phases::CaptainSelection)
+      },
       Some(Phases::CaptainSelection) => Some(Phases::PlayerDrafting),
-      Some(Phases::PlayerDrafting) => Some(Phases::MapSelection),
+      Some(Phases::PlayerDrafting) => {
+        self.turn_number = 1;
+        self.turn_taker = team_id_range().cycle();
+        Some(Phases::MapSelection)
+      },
       Some(Phases::MapSelection) => Some(Phases:: ResultRecording),
       _ => None
     };

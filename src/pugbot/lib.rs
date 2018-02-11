@@ -14,7 +14,9 @@ pub mod traits;
 
 use models::draft_pool::DraftPool;
 use models::game::Game;
+use serenity::builder::CreateEmbed;
 use serenity::framework::StandardFramework;
+use serenity::model::channel::{ Embed, Message };
 use serenity::model::event::ResumedEvent;
 use serenity::model::gateway::Ready;
 use serenity::model::id::UserId;
@@ -23,6 +25,7 @@ use serenity::http;
 use std::collections::HashSet;
 use std::env;
 use std::marker::PhantomData;
+use std::ops::Range;
 
 struct Handler;
 
@@ -48,6 +51,11 @@ fn team_size() -> u32 {
       },
     Err(_) => panic!("No 'TEAM_SIZE' env var found")
   }
+}
+
+fn team_id_range() -> Range<usize> {
+  let tc = team_count().unwrap();
+  Range { start: 1, end: (tc as usize) + 1 }
 }
 
 fn team_count() -> Option<u32> {
@@ -100,6 +108,10 @@ pub fn client_setup() -> Client {
                .batch_known_as(vec!["r"]))
   );
   client
+}
+
+pub fn consume_message(msg: &Message, embed: Embed) {
+  msg.channel_id.send_message(|m| m.embed(|_| CreateEmbed::from(embed))).unwrap();
 }
 
 fn bot_owners() -> HashSet<UserId> {

@@ -5,7 +5,7 @@ use std::marker::{ PhantomData, Send, Sync };
 use ::traits::pool_availability::PoolAvailability;
 use typemap::Key;
 
-use commands::add::consume_message;
+use consume_message;
 
 #[allow(non_camel_case_types)]
 pub struct remove<T: Key<Value=T>> {
