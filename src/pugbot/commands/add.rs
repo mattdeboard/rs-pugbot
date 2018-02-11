@@ -8,6 +8,8 @@ use typemap::Key;
 use std::marker::{ PhantomData, Send, Sync };
 use models::game::{ Game, Phases };
 use traits::pool_availability::PoolAvailability;
+use traits::phased::Phased;
+use queue_size;
 
 #[allow(non_camel_case_types)]
 pub struct add<T: Key<Value=T>> {
@@ -16,15 +18,23 @@ pub struct add<T: Key<Value=T>> {
 
 impl<T> Command for add<T> where T: PoolAvailability + Key<Value=T> + Send + Sync {
   #[allow(unreachable_code, unused_mut)]
-  fn execute(&self, mut ctx: &mut Context, msg: &Message, _: Args) ->
-    Result<(), CommandError> {
-      {
-        let mut data = ctx.data.lock();
-        let game = data.get_mut::<Game<T>>().unwrap();
-        update_members(game, msg, true);
-      }
-      Ok(())
+  fn execute(
+    &self, mut ctx: &mut Context, msg: &Message, _: Args
+  ) -> Result<(), CommandError> {
+    {
+      let mut data = ctx.data.lock();
+      let game = data.get_mut::<Game<T>>().unwrap();
+
+      // If the draft pool is full, and we're currently in the player registration phase,
+      // advance to the next phase.
+      if update_members(game, msg, true).len() as u32 == queue_size() &&
+        game.phase == Some(Phases::PlayerRegistration) {
+          game.next_phase();
+        }
     }
+
+    Ok(())
+  }
 }
 
 pub fn update_members<T: PoolAvailability>(
