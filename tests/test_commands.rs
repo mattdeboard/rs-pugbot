@@ -6,6 +6,8 @@ extern crate serenity;
 use pugbot::commands;
 use pugbot::models::game::{ Game, Phases };
 use pugbot::models::draft_pool::DraftPool;
+use pugbot::traits::has_members::HasMembers;
+use pugbot::traits::phased::Phased;
 use serde::de::Deserialize;
 use serde_json::Value;
 use serenity::model::channel::{ Message };
@@ -50,7 +52,18 @@ fn update_members() {
 
 #[test]
 fn select_captains() {
+  let message = p!(Message, "message");
   let game = &mut Game::new(None, DraftPool::new(vec![gen_test_user()]));
-  assert_eq!(game.select_captains(), Err("We aren't picking captains, yet!"));
+  game.draft_pool.add_member(message.author);
   assert_eq!(game.phase, Some(Phases::PlayerRegistration));
+  assert_eq!(game.select_captains(), Err("We aren't picking captains, yet!"));
+  game.next_phase();
+  // Switching to Captain Selection should build the available_players HashMap.
+  assert_eq!(game.draft_pool.available_players.len(), 2);
+  assert_eq!(game.phase, Some(Phases::CaptainSelection));
+  assert_eq!(game.select_captains(), Ok(()));
+  // Selecting captains successfully should consume all the entries in available_players
+  assert_eq!(game.draft_pool.available_players.len(), 0);
+  // There should now be two teams built.
+  assert_eq!(game.teams.clone().unwrap().len(), 2);
 }

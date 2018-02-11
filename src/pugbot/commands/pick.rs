@@ -27,4 +27,3 @@ command!(pick(ctx, msg, args) {
 
   consume_message(msg, game.drafting_complete_embed(165, 255, 241).unwrap());
 });
-

@@ -8,7 +8,7 @@ use std::ops::Range;
 use traits::phased::Phased;
 use typemap::Key;
 use team_id_range;
-
+use team_count;
 pub struct Game {
   pub teams: Option<Vec<Team>>,
   pub draft_pool: DraftPool,
@@ -57,10 +57,10 @@ impl Game {
     }
 
     let mut rng = thread_rng();
-    let pool = self.draft_pool.available_players.clone();
     let teams: Vec<Team> = team_id_range()
       .map(
         |i| {
+          let pool = self.draft_pool.available_players.clone();
           let keys: Vec<&usize> = pool.keys().collect();
           let random_key: &usize = rng.choose(&[keys]).unwrap().first().unwrap();
 
