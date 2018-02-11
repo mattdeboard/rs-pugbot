@@ -1,10 +1,6 @@
-use serenity::client::Context;
-use serenity::framework::standard::{ Args, Command, CommandError };
 use serenity::model::channel::{ Message };
 use serenity::model::user::User;
-use typemap::Key;
 
-use std::marker::{ PhantomData, Send, Sync };
 use models::game::{ Game, Phases };
 use traits::has_members::HasMembers;
 use traits::pool_availability::PoolAvailability;
@@ -12,26 +8,14 @@ use traits::phased::Phased;
 use consume_message;
 use queue_size;
 
-#[allow(non_camel_case_types)]
-pub struct add<T: Key<Value=T>> {
-  pub phantom: PhantomData<fn(T)>
-}
+command!(add(ctx, msg) {
+  {
+    let mut data = ctx.data.lock();
+    let game = data.get_mut::<Game>().unwrap();
 
-impl<T> Command for add<T> where T: PoolAvailability + Key<Value=T> + Send + Sync {
-  #[allow(unreachable_code, unused_mut)]
-  fn execute(
-    &self, mut ctx: &mut Context, msg: &Message, _: Args
-  ) -> Result<(), CommandError> {
-    {
-      let mut data = ctx.data.lock();
-      let game = data.get_mut::<Game>().unwrap();
-
-      update_members(game, msg, true);
-    }
-
-    Ok(())
+    update_members(game, msg, true);
   }
-}
+});
 
 pub fn update_members(game: &mut Game, msg: &Message, send_embed: bool) -> Vec<User> {
   // The `send_embed` parameter exists only as a way to avoid trying to hit the Discord

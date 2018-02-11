@@ -24,7 +24,6 @@ use serenity::prelude::*;
 use serenity::http;
 use std::collections::HashSet;
 use std::env;
-use std::marker::PhantomData;
 use std::ops::Range;
 
 struct Handler;
@@ -101,10 +100,10 @@ pub fn client_setup() -> Client {
                  .owners(bot_owners())
                  .prefix("~"))
       .command("add", |c| c
-               .cmd(commands::add::add::<DraftPool> { phantom: PhantomData })
+               .cmd(commands::add::add)
                .batch_known_as(vec!["a"]))
       .command("remove", |c| c
-               .cmd(commands::remove::remove::<DraftPool> { phantom: PhantomData })
+               .cmd(commands::remove::remove)
                .batch_known_as(vec!["r"]))
       .command("pick", |c| c
                .cmd(commands::pick::pick)

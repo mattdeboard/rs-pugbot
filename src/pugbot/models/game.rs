@@ -8,7 +8,7 @@ use std::ops::Range;
 use traits::phased::Phased;
 use typemap::Key;
 use team_id_range;
-use team_count;
+
 pub struct Game {
   pub teams: Option<Vec<Team>>,
   pub draft_pool: DraftPool,
