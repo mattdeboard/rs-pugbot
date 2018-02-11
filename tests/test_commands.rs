@@ -39,6 +39,7 @@ fn update_members() {
   let key = "TEAM_SIZE";
   set_var(key, "1");
   let game = &mut Game::new(None, DraftPool::new(vec![gen_test_user()]));
+  assert_eq!(game.phase, Some(Phases::PlayerRegistration));
   let users = commands::add::update_members(game, &message, false);
   // There should be one member in the members vec to start with: our test user.
   // `update_members` above should add an additional user, the author of the message (which is
