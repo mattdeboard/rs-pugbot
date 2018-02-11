@@ -6,9 +6,10 @@ use typemap::Key;
 pub struct Game<T: PoolAvailability> {
   pub teams: Option<Vec<Team>>,
   pub draft_pool: T,
-  phase: Option<Phases>,
+  pub phase: Option<Phases>,
 }
 
+#[derive(PartialEq)]
 pub enum Phases {
   PlayerRegistration,
   CaptainSelection,
@@ -24,10 +25,6 @@ impl<T> Game<T> where T: PoolAvailability {
       draft_pool: draft_pool,
       phase: Some(Phases::PlayerRegistration),
     }
-  }
-
-  pub fn current_phase(&self) -> &Phases {
-    self.phase.as_ref().unwrap()
   }
 }
 
@@ -50,6 +47,10 @@ impl<T> Phased for Game<T> where T: PoolAvailability {
       Some(Phases::ResultRecording) => Some(Phases::MapSelection),
       _ => None
     };
+  }
+
+  fn reset_phase(&mut self) {
+    self.phase = Some(Phases::PlayerRegistration);
   }
 }
 
