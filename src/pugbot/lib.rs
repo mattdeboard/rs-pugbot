@@ -1,7 +1,9 @@
-#![feature(const_fn)]
+#![feature(const_fn, custom_attribute, plugin)]
+#![plugin(rocket_codegen)]
 
 #[macro_use] extern crate log;
 #[macro_use] extern crate serenity;
+extern crate diesel;
 
 extern crate env_logger;
 extern crate kankyo;
