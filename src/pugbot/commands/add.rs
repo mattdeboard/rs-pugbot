@@ -7,6 +7,7 @@ use typemap::Key;
 
 use std::marker::{ PhantomData, Send, Sync };
 use models::game::{ Game, Phases };
+use traits::has_members::HasMembers;
 use traits::pool_availability::PoolAvailability;
 use traits::phased::Phased;
 use queue_size;
@@ -23,7 +24,7 @@ impl<T> Command for add<T> where T: PoolAvailability + Key<Value=T> + Send + Syn
   ) -> Result<(), CommandError> {
     {
       let mut data = ctx.data.lock();
-      let game = data.get_mut::<Game<T>>().unwrap();
+      let game = data.get_mut::<Game>().unwrap();
 
       update_members(game, msg, true);
     }
@@ -32,11 +33,7 @@ impl<T> Command for add<T> where T: PoolAvailability + Key<Value=T> + Send + Syn
   }
 }
 
-pub fn update_members<T: PoolAvailability>(
-  game: &mut Game<T>,
-  msg: &Message,
-  send_embed: bool
-) -> Vec<User> {
+pub fn update_members(game: &mut Game, msg: &Message, send_embed: bool) -> Vec<User> {
   // The `send_embed` parameter exists only as a way to avoid trying to hit the Discord
   // API during testing.
   if game.phase != Some(Phases::PlayerRegistration) {

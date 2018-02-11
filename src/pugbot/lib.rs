@@ -82,9 +82,9 @@ pub fn client_setup() -> Client {
 
   {
     let mut data = client.data.lock();
-    let draft_pool = DraftPool { members: Vec::new() };
+    let draft_pool = DraftPool::new(Vec::new());
     let game = Game::new(None, draft_pool);
-    data.insert::<Game<DraftPool>>(game);
+    data.insert::<Game>(game);
   }
 
   client.with_framework(
@@ -97,8 +97,7 @@ pub fn client_setup() -> Client {
                .batch_known_as(vec!["a"]))
       .command("remove", |c| c
                .cmd(commands::remove::remove::<DraftPool> { phantom: PhantomData })
-               .batch_known_as(vec!["r"])
-      )
+               .batch_known_as(vec!["r"]))
   );
   client
 }

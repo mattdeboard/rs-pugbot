@@ -6,10 +6,9 @@ extern crate serenity;
 use pugbot::commands;
 use pugbot::models::game::{ Game, Phases };
 use pugbot::models::draft_pool::DraftPool;
-use pugbot::traits;
 use serde::de::Deserialize;
 use serde_json::Value;
-use serenity::model::channel::{ Embed, Message };
+use serenity::model::channel::{ Message };
 use serenity::model::id::UserId;
 use serenity::model::user::User;
 use std::env::set_var;
@@ -37,17 +36,13 @@ fn gen_test_user() -> User {
 #[test]
 fn update_members() {
   let message = p!(Message, "message");
-
-  // Test updating members with a closed draft pool.
-  let mut members = Vec::new();
-  members.push(gen_test_user());
   let key = "TEAM_SIZE";
   set_var(key, "1");
-  // Test updating members with an open draft pool.
-  let game = &mut Game::new(None, DraftPool { members: members });
+  let game = &mut Game::new(None, DraftPool::new(vec![gen_test_user()]));
   let users = commands::add::update_members(game, &message, false);
-  // There should be one member in the members vec, the author of the message (which is
-  // defined in ./resources/message.json)
+  // There should be one member in the members vec to start with: our test user.
+  // `update_members` above should add an additional user, the author of the message (which is
+  // defined in ./resources/message.json).
   assert_eq!(users.len(), 2);
   assert_eq!(game.phase, Some(Phases::CaptainSelection));
 }

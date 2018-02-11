@@ -1,15 +1,16 @@
+use models::draft_pool::DraftPool;
 use models::team::Team;
 use team_count;
 use rand::{ Rng, thread_rng };
 use serenity::model::user::User;
 use std::ops::Range;
-use traits::pool_availability::PoolAvailability;
+use traits::has_members::HasMembers;
 use traits::phased::Phased;
 use typemap::Key;
 
-pub struct Game<T: PoolAvailability> {
+pub struct Game {
   pub teams: Option<Vec<Team>>,
-  pub draft_pool: T,
+  pub draft_pool: DraftPool,
   pub phase: Option<Phases>,
 }
 
@@ -22,8 +23,8 @@ pub enum Phases {
   ResultRecording
 }
 
-impl<T> Game<T> where T: PoolAvailability {
-  pub fn new(teams: Option<Vec<Team>>, draft_pool: T) -> Game<T>{
+impl Game {
+  pub fn new(teams: Option<Vec<Team>>, draft_pool: DraftPool) -> Game {
     Game {
       teams: teams,
       draft_pool: draft_pool,
@@ -49,8 +50,11 @@ impl<T> Game<T> where T: PoolAvailability {
   }
 }
 
-impl<T> Phased for Game<T> where T: PoolAvailability {
+impl Phased for Game {
   fn next_phase(&mut self ) {
+    {
+      self.draft_pool.generate_available_players();
+    }
     self.phase = match self.phase {
       Some(Phases::PlayerRegistration) => Some(Phases::CaptainSelection),
       Some(Phases::CaptainSelection) => Some(Phases::PlayerDrafting),
@@ -75,6 +79,6 @@ impl<T> Phased for Game<T> where T: PoolAvailability {
   }
 }
 
-impl<T> Key for Game<T> where T: 'static + PoolAvailability {
-  type Value = Game<T>;
+impl Key for Game {
+  type Value = Game;
 }
