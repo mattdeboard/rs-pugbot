@@ -43,7 +43,19 @@ fn phase_map() -> HashMap<i32, Phase> {
 }
 
 impl<T> ThreadSafePhased for Game<T> where T: PoolAvailability {
-  fn forward_phase(&self) {
+  /// Implements thread-safe state changes to `Game.phase`.
+  ///
+  /// An example of the usage here is, when enough players have enrolled in the
+  /// draft pool to create two full teams, we want to move from the
+  /// `PlayerRegistration` phase to `CaptainSelection`. This will provide other
+  /// parts of the code a way to explicitly check how to respond appropriately
+  /// to the `add` command.
+  ///
+  /// In order to keep the code that signals a phase change should occur
+  /// decoupled from the implementation for the phase-changing logic, only the
+  /// 0-argument `next_phase` and `previous_phase` methods are exposed to
+  /// callers.
+  fn next_phase(&self) {
     let phase_clone = self.phase.clone();
     // match self.phase_map.get(*phase_clone.lock().unwrap() as i32) {
     //   Some(phase) => {
@@ -56,7 +68,7 @@ impl<T> ThreadSafePhased for Game<T> where T: PoolAvailability {
     // phase_key;
   }
 
-  fn backward_phase(&self) {}
+  fn previous_phase(&self) {}
 }
 
 impl<T> Key for Game<T> where T: 'static + PoolAvailability {

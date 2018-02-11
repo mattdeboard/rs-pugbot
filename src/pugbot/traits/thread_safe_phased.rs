@@ -1,4 +1,4 @@
 pub trait ThreadSafePhased {
-  fn forward_phase(&self);
-  fn backward_phase(&self);
+  fn next_phase(&self);
+  fn previous_phase(&self);
 }
