@@ -7,6 +7,7 @@ use std::ops::Range;
 use traits::has_members::HasMembers;
 use traits::phased::Phased;
 use typemap::Key;
+use std::collections::HashMap;
 
 pub struct Game {
   pub teams: Option<Vec<Team>>,
@@ -32,21 +33,41 @@ impl Game {
     }
   }
 
-  pub fn select_captains(&mut self) {
-    let mut rng = thread_rng();
-    let pool = self.draft_pool.members();
-
-    if let Some(tc) = team_count() {
-      let teams: Vec<Team> = Range { start: 1, end: tc + 1 }.map(|i| {
-        let user: &User = rng.choose(&pool).unwrap();
-        Team {
-          id: (i as usize),
-          captain: Some(user.clone()),
-          members: Vec::new()
-        }
-      }).collect();
-      self.teams = Some(teams.clone());
+  pub fn select_captains(&mut self) -> Result<(), &'static str> {
+    if self.phase != Some(Phases::CaptainSelection) {
+      return Err("We aren't picking captains, yet!");
     }
+
+    let mut rng = thread_rng();
+    let pool = self.draft_pool.available_players.clone();
+    let tc = team_count().unwrap();
+    let teams: Vec<Team> = (Range { start: 1, end: tc + 1 })
+      .map(
+        |i| {
+          let keys: Vec<&usize> = pool.keys().collect();
+          let random_key: &usize = rng.choose(&[keys]).unwrap().first().unwrap();
+
+          if let Some(user) = self.draft_pool.pop_available_player(random_key) {
+            Some(Team {
+              id: (i as usize),
+              captain: Some(user.clone()),
+              members: vec![user]
+            })
+          } else {
+            None
+          }
+        }
+      )
+      .filter(|t| t.is_some())
+      .map(|t| t.unwrap())
+      .collect();
+
+    self.teams = Some(teams.clone());
+
+    if self.phase == Some(Phases::PlayerRegistration) {
+      self.next_phase();
+    }
+    Ok(())
   }
 }
 

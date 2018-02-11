@@ -46,3 +46,10 @@ fn update_members() {
   assert_eq!(users.len(), 2);
   assert_eq!(game.phase, Some(Phases::CaptainSelection));
 }
+
+#[test]
+fn select_captains() {
+  let game = &mut Game::new(None, DraftPool::new(vec![gen_test_user()]));
+  assert_eq!(game.select_captains(), Err("We aren't picking captains, yet!"));
+  assert_eq!(game.phase, Some(Phases::PlayerRegistration));
+}

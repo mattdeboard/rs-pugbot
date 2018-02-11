@@ -10,7 +10,7 @@ use traits::pool_availability::*;
 
 pub struct DraftPool {
   pub members: Vec<User>,
-  available_players: HashMap<usize, User>
+  pub available_players: HashMap<usize, User>
 }
 
 impl DraftPool {
@@ -21,14 +21,18 @@ impl DraftPool {
     }
   }
 
+  pub fn available_players(self) -> HashMap<usize, User> {
+    self.available_players
+  }
+
   pub fn generate_available_players(&mut self) {
     for (idx, member) in self.members.clone().iter().enumerate() {
       self.available_players.insert(idx + 1, member.clone());
     }
   }
 
-  pub fn remove_available_player(&mut self, player_number: usize) -> Option<User> {
-    self.available_players.remove(&player_number)
+  pub fn pop_available_player(&mut self, player_number: &usize) -> Option<User> {
+    self.available_players.remove(player_number)
   }
 }
 
