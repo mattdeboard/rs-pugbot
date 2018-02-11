@@ -4,13 +4,15 @@ extern crate serde_json;
 extern crate serenity;
 
 use pugbot::commands;
-use pugbot::models::game::Game;
+use pugbot::models::game::{ Game, Phases };
 use pugbot::models::draft_pool::DraftPool;
 use pugbot::traits;
 use serde::de::Deserialize;
 use serde_json::Value;
 use serenity::model::channel::{ Embed, Message };
+use serenity::model::id::UserId;
 use serenity::model::user::User;
+use std::env::set_var;
 use std::fs::File;
 
 macro_rules! p {
@@ -22,31 +24,13 @@ macro_rules! p {
   })
 }
 
-struct ClosedPool {
-  pub members: Vec<User>
-}
-
-impl traits::has_members::HasMembers for ClosedPool {
-  fn members(&self) -> Vec<User> { self.members.clone() }
-
-  fn add_member(&mut self, _user: User) -> Option<Embed> {
-    None
-  }
-
-  fn remove_member(&mut self, _user: User) -> Option<Embed> {
-    None
-  }
-
-  fn members_changed_embed(&mut self, _r: u8, _g: u8, _b: u8) -> Option<Embed> {
-    None
-  }
-}
-
-impl traits::pool_availability::PoolAvailability for ClosedPool {
-  fn is_open(&self) -> bool { false }
-
-  fn members_full_embed(&mut self, _r: u8, _g: u8, _b: u8) -> Option<Embed> {
-    None
+fn gen_test_user() -> User {
+  User {
+    id: UserId(210),
+    avatar: Some("abc".to_string()),
+    bot: true,
+    discriminator: 1432,
+    name: "test".to_string(),
   }
 }
 
@@ -55,17 +39,15 @@ fn update_members() {
   let message = p!(Message, "message");
 
   // Test updating members with a closed draft pool.
-  let draft_pool = ClosedPool { members: Vec::new() };
-  let game_closed = &mut Game::new(None, draft_pool);
-  let users = commands::add::update_members(game_closed, &message, false);
-  // There should be no members in the members vec, since `is_open` always yields
-  // `false`.
-  assert_eq!(users.len(), 0);
-
+  let mut members = Vec::new();
+  members.push(gen_test_user());
+  let key = "TEAM_SIZE";
+  set_var(key, "1");
   // Test updating members with an open draft pool.
-  let game_open = &mut Game::new(None, DraftPool { members: Vec::new() });
-  let users = commands::add::update_members(game_open, &message, false);
+  let game = &mut Game::new(None, DraftPool { members: members });
+  let users = commands::add::update_members(game, &message, false);
   // There should be one member in the members vec, the author of the message (which is
   // defined in ./resources/message.json)
-  assert_eq!(users.len(), 1);
+  assert_eq!(users.len(), 2);
+  assert_eq!(game.phase, Some(Phases::CaptainSelection));
 }

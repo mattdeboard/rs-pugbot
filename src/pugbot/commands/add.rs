@@ -25,12 +25,7 @@ impl<T> Command for add<T> where T: PoolAvailability + Key<Value=T> + Send + Syn
       let mut data = ctx.data.lock();
       let game = data.get_mut::<Game<T>>().unwrap();
 
-      // If the draft pool is full, and we're currently in the player registration phase,
-      // advance to the next phase.
-      if update_members(game, msg, true).len() as u32 == queue_size() &&
-        game.phase == Some(Phases::PlayerRegistration) {
-          game.next_phase();
-        }
+      update_members(game, msg, true);
     }
 
     Ok(())
@@ -58,7 +53,14 @@ pub fn update_members<T: PoolAvailability>(
       }
     }
   }
-  game.draft_pool.members()
+
+  let members = game.draft_pool.members();
+  if members.len() as u32 == queue_size() &&
+    game.phase == Some(Phases::PlayerRegistration) {
+      game.next_phase();
+    }
+
+  members
 }
 
 pub fn consume_message(msg: &Message, embed: Embed) {

@@ -13,7 +13,7 @@ pub struct Game<T: PoolAvailability> {
   pub phase: Option<Phases>,
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 pub enum Phases {
   PlayerRegistration,
   CaptainSelection,
