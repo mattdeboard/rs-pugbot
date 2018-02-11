@@ -1,6 +1,7 @@
 use serenity::model::channel::{ Embed, EmbedFooter };
 use serenity::model::user::User;
 use serenity::utils::Colour;
+use std::collections::HashMap;
 use typemap::Key;
 
 use queue_size;
@@ -9,6 +10,30 @@ use traits::pool_availability::*;
 
 pub struct DraftPool {
   pub members: Vec<User>,
+  pub available_players: HashMap<usize, User>
+}
+
+impl DraftPool {
+  pub fn new(members: Vec<User>) -> DraftPool {
+    DraftPool {
+      members: members,
+      available_players: HashMap::new()
+    }
+  }
+
+  pub fn available_players(self) -> HashMap<usize, User> {
+    self.available_players
+  }
+
+  pub fn generate_available_players(&mut self) {
+    for (idx, member) in self.members.clone().iter().enumerate() {
+      self.available_players.insert(idx + 1, member.clone());
+    }
+  }
+
+  pub fn pop_available_player(&mut self, player_number: &usize) -> Option<User> {
+    self.available_players.remove(player_number)
+  }
 }
 
 impl PoolAvailability for DraftPool {
@@ -17,7 +42,7 @@ impl PoolAvailability for DraftPool {
   }
 
   fn members_full_embed(&mut self, r: u8, g: u8, b: u8) -> Option<Embed> {
-    let members = self.members.clone();
+    let members = self.members();
 
     Some(Embed {
       author: None,
