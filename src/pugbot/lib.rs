@@ -1,5 +1,4 @@
 #![feature(const_fn, custom_attribute, plugin)]
-#![plugin(rocket_codegen)]
 
 #[macro_use] extern crate log;
 #[macro_use] extern crate serenity;
