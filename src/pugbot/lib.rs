@@ -73,7 +73,7 @@ pub fn client_setup() -> Client {
   {
     let mut data = client.data.lock();
     let draft_pool = DraftPool { members: Vec::new() };
-    let game = Game { teams: None, draft_pool: draft_pool };
+    let game = Game::new(None, draft_pool);
     data.insert::<Game<DraftPool>>(game);
   }
 

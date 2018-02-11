@@ -56,14 +56,14 @@ fn update_members() {
 
   // Test updating members with a closed draft pool.
   let draft_pool = ClosedPool { members: Vec::new() };
-  let game_closed = &mut Game { teams: None, draft_pool: draft_pool };
+  let game_closed = &mut Game::new(None, draft_pool);
   let users = commands::add::update_members(game_closed, &message, false);
   // There should be no members in the members vec, since `is_open` always yields
   // `false`.
   assert_eq!(users.len(), 0);
 
   // Test updating members with an open draft pool.
-  let game_open = &mut Game { teams: None, draft_pool: DraftPool { members: Vec::new() } };
+  let game_open = &mut Game::new(None, DraftPool { members: Vec::new() });
   let users = commands::add::update_members(game_open, &message, false);
   // There should be one member in the members vec, the author of the message (which is
   // defined in ./resources/message.json)
