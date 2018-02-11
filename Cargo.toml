@@ -14,7 +14,7 @@ path = "src/main.rs"
 test = false
 
 [dependencies]
-diesel = { version = "*", features = ["chrono", "postgres", "serde_json", "huge-tables", "uuid"] }
+diesel = { version = "*", no-default-features = true, features = ["chrono", "postgres", "serde_json", "huge-tables", "uuid"] }
 diesel_codegen = { version = "*", features = ["postgres"] }
 env_logger = "~0.4"
 kankyo = "~0.1"
