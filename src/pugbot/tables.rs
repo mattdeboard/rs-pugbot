@@ -1,6 +1,25 @@
 pub mod query {
   use bigdecimal::BigDecimal;
 
+  #[primary_key(game_title_id)]
+  #[table_name="game_titles"]
+  #[derive(Debug, Queryable, Associations)]
+  pub struct GameTitles {
+    pub game_title_id: i32,
+    pub game_name: String
+  }
+
+  #[primary_key(game_mode_id)]
+  #[table_name="game_modes"]
+  #[belongs_to(GameTitles)]
+  #[derive(Debug, Queryable, Associations)]
+  pub struct GameModes {
+    pub game_mode_id: i32,
+    pub game_title_id: i32,
+    pub mode_name: String,
+    pub team_size: i32
+  }
+
   #[primary_key(user_id)]
   #[table_name="users"]
   #[derive(Debug, Queryable, Associations)]
@@ -26,6 +45,23 @@ pub mod query {
 pub mod insert {
   use bigdecimal::BigDecimal;
   use schema::*;
+
+  #[primary_key(game_title_id)]
+  #[table_name="game_titles"]
+  #[derive(Insertable)]
+  pub struct GameTitles {
+    pub game_name: String
+  }
+
+  #[primary_key(game_mode_id)]
+  #[table_name="game_modes"]
+  #[belongs_to(GameTitles)]
+  #[derive(Insertable)]
+  pub struct GameModes {
+    pub game_title_id: i32,
+    pub mode_name: String,
+    pub team_size: i32
+  }
 
   #[table_name="users"]
   #[derive(Insertable)]
