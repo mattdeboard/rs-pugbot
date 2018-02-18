@@ -1,18 +1,26 @@
 #![feature(const_fn, custom_attribute, plugin)]
-
+#![allow(unused_attributes)]
 #[macro_use] extern crate log;
 #[macro_use] extern crate serenity;
-extern crate diesel;
+#[macro_use] extern crate diesel;
+#[macro_use] extern crate diesel_codegen;
 
+extern crate bigdecimal;
 extern crate env_logger;
 extern crate kankyo;
+extern crate r2d2;
+extern crate r2d2_diesel;
 extern crate rand;
 extern crate typemap;
 
 pub mod commands;
+pub mod db;
 pub mod models;
+pub mod schema;
+pub mod tables;
 pub mod traits;
 
+use bigdecimal::BigDecimal;
 use models::draft_pool::DraftPool;
 use models::game::Game;
 use serenity::builder::CreateEmbed;
@@ -21,11 +29,17 @@ use serenity::model::channel::{ Embed, Message };
 use serenity::model::event::ResumedEvent;
 use serenity::model::gateway::Ready;
 use serenity::model::id::UserId;
+use serenity::model::user::User;
 use serenity::prelude::*;
 use serenity::http;
 use std::collections::HashSet;
+use std::convert::From;
 use std::env;
 use std::ops::Range;
+use std::str::FromStr;
+use tables::insert::{ Users as IUsers };
+use tables::query::{ Users as QUsers };
+use tables::insert::{ UserRatings as IUserRatings };
 
 struct Handler;
 
@@ -93,6 +107,7 @@ pub fn client_setup() -> Client {
     let draft_pool = DraftPool::new(Vec::new());
     let game = Game::new(None, draft_pool);
     data.insert::<Game>(game);
+    data.insert::<db::Pool>(db::init_pool(None));
   }
 
   client.with_framework(
@@ -128,3 +143,21 @@ fn bot_owners() -> HashSet<UserId> {
   }
 }
 
+impl From<User> for IUsers {
+  fn from(user: User) -> IUsers {
+    IUsers {
+      bot: user.bot,
+      discriminator: user.discriminator as i32,
+      name: user.name
+    }
+  }
+}
+
+impl From<QUsers> for IUserRatings {
+  fn from(record: QUsers) -> IUserRatings {
+    IUserRatings {
+      user_id: record.user_id,
+      rating: BigDecimal::from_str("0.00").unwrap()
+    }
+  }
+}
