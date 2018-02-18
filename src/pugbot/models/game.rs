@@ -70,7 +70,8 @@ impl Game {
             Some(Team {
               id: i,
               captain: Some(user.clone()),
-              members: vec![user]
+              members: vec![user],
+              glicko2_ratings: vec![]
             })
           } else {
             None

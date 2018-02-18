@@ -26,6 +26,7 @@ use bigdecimal::BigDecimal;
 use glicko2::Glicko2Rating;
 use models::draft_pool::DraftPool;
 use models::game::Game;
+use models::team::Team;
 use num::traits::cast::ToPrimitive;
 use serenity::builder::CreateEmbed;
 use serenity::framework::StandardFramework;
