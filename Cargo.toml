@@ -19,6 +19,7 @@ diesel = { version = "*", features = ["chrono", "postgres", "serde_json", "huge-
 diesel_cli = { features = ["postgres"] }
 diesel_codegen = { version = "*", features = ["postgres"] }
 env_logger = "~0.4"
+glicko2 = "*"
 kankyo = "~0.1"
 log = "~0.3"
 r2d2 = "*"
