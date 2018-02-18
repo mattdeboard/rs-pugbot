@@ -159,7 +159,8 @@ impl From<QUsers> for IUserRatings {
       user_id: record.user_id,
       rating: None,
       deviation: None,
-      volatility: None
+      volatility: None,
+      game_mode_id: 0
     }
   }
 }

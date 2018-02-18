@@ -99,5 +99,5 @@ pub fn connection() -> r2d2::PooledConnection<ConnectionManager<PgConnection>> {
 #[test]
 #[allow(unused_must_use)]
 fn write_to_db() {
-  assert_eq!(create_user_and_ratings(connection(), gen_test_user()), Ok(()));
+  assert_eq!(create_user_and_ratings(connection(), 1 as i32, gen_test_user()), Ok(()));
 }

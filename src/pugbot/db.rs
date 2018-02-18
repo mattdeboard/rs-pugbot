@@ -43,11 +43,12 @@ pub fn init_pool(db_url: Option<String>) -> r2d2::Pool<ConnectionManager<PgConne
 
 pub fn create_user_and_ratings(
   conn: r2d2::PooledConnection<ConnectionManager<PgConnection>>,
+  mode_id: i32,
   user: User
 ) -> Result<(), String> {
 
   match insert_into(users).values(&IUsers::from(user)).get_result::<QUsers>(&*conn) {
-    Ok(user_record) => match get_or_create_ratings(conn, user_record) {
+    Ok(user_record) => match create_rating(conn, mode_id, user_record) {
       Ok(_) => Ok(()),
       e => Err(format!("{:?}", e))
     },
@@ -55,9 +56,12 @@ pub fn create_user_and_ratings(
   }
 }
 
-pub fn get_or_create_ratings(
+pub fn create_rating(
   conn: r2d2::PooledConnection<ConnectionManager<PgConnection>>,
+  mode_id: i32,
   user_record: QUsers
 ) -> Result<usize, Error> {
-  insert_into(user_ratings).values(&IUserRatings::from(user_record)).execute(&*conn)
+  let mut ratings = IUserRatings::from(user_record);
+  ratings.game_mode_id = mode_id;
+  insert_into(user_ratings).values(&ratings).execute(&*conn)
 }

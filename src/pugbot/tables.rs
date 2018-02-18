@@ -32,13 +32,14 @@ pub mod query {
 
   #[table_name = "user_ratings"]
   #[derive(Debug, Queryable, Associations)]
-  #[belongs_to(Users)]
+  #[belongs_to(Users, GameModes)]
   pub struct UserRatings {
     pub id: i32,
     pub user_id: i32,
     pub rating: Option<BigDecimal>,
     pub deviation: Option<BigDecimal>,
-    pub volatility: Option<BigDecimal>
+    pub volatility: Option<BigDecimal>,
+    pub game_mode_id: i32
   }
 }
 
@@ -73,11 +74,12 @@ pub mod insert {
 
   #[table_name = "user_ratings"]
   #[derive(Insertable)]
-  #[belongs_to(Users)]
+  #[belongs_to(Users, GameModes)]
   pub struct UserRatings {
     pub user_id: i32,
     pub rating: Option<BigDecimal>,
     pub deviation: Option<BigDecimal>,
-    pub volatility: Option<BigDecimal>
+    pub volatility: Option<BigDecimal>,
+    pub game_mode_id: i32
   }
 }
