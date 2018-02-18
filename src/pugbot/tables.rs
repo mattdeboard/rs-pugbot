@@ -28,7 +28,8 @@ pub mod query {
     pub user_id: i32,
     pub bot: bool,
     pub discriminator: i32,
-    pub name: String
+    pub name: String,
+    pub discord_user_id: i32
   }
 
   #[table_name = "user_ratings"]
@@ -70,7 +71,8 @@ pub mod insert {
   pub struct Users {
     pub bot: bool,
     pub discriminator: i32,
-    pub name: String
+    pub name: String,
+    pub discord_user_id: i32
   }
 
   #[table_name = "user_ratings"]

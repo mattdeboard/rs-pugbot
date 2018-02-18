@@ -152,7 +152,8 @@ impl From<User> for IUsers {
     IUsers {
       bot: user.bot,
       discriminator: user.discriminator as i32,
-      name: user.name
+      name: user.name,
+      discord_user_id: user.id.0 as i32,
     }
   }
 }
