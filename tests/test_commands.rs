@@ -41,9 +41,9 @@ fn gen_test_user() -> User {
   User {
     id: UserId(210),
     avatar: Some("abc".to_string()),
-    bot: true,
+    bot: false,
     discriminator: 1432,
-    name: "test".to_string(),
+    name: "TestUser".to_string(),
   }
 }
 
