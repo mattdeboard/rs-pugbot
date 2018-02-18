@@ -1,6 +1,8 @@
 extern crate bigdecimal;
 extern crate diesel;
+extern crate glicko2;
 extern crate kankyo;
+extern crate num;
 extern crate pugbot;
 extern crate r2d2;
 extern crate r2d2_diesel;
@@ -11,6 +13,7 @@ extern crate serenity;
 use diesel::prelude::*;
 use diesel::sql_query;
 use diesel::RunQueryDsl;
+use glicko2::{GameResult, Glicko2Rating};
 use pugbot::commands;
 use pugbot::db::init_pool;
 use pugbot::models::game::{ Game, Phases };
@@ -84,15 +87,6 @@ pub fn connection() -> r2d2::PooledConnection<ConnectionManager<PgConnection>> {
   let pool = init_pool(Some("postgres://pugbot:pugbot@localhost:5432/test_pugbot".to_string()));
   let conn = pool.get().unwrap();
   conn.begin_test_transaction().unwrap();
-  sql_query("DROP TABLE IF EXISTS users CASCADE").execute(&*conn).unwrap();
-  sql_query("create table users (\
-             user_id serial primary key,\
-             bot bool not null default false,\
-             discriminator varchar not null,\
-             name varchar not null\
-             )")
-  .execute(&*conn)
-  .unwrap();
   conn
 }
 
@@ -100,4 +94,30 @@ pub fn connection() -> r2d2::PooledConnection<ConnectionManager<PgConnection>> {
 #[allow(unused_must_use)]
 fn write_to_db() {
   assert_eq!(create_user_and_ratings(connection(), 1 as i32, gen_test_user()), Ok(()));
+}
+
+#[test]
+fn update_glicko2_rating() {
+  let example_rating = Glicko2Rating {
+    value: 1500.0,
+    deviation: 200.0,
+    volatility: 0.3
+  };
+  let mut results = vec![];
+  results.push(GameResult::win(Glicko2Rating {
+    value: 1400.0,
+    deviation: 30.0,
+    volatility: 0.3
+  }));
+  results.push(GameResult::win(Glicko2Rating {
+    value: 1550.0,
+    deviation: 100.0,
+    volatility: 0.3
+  }));
+  results.push(GameResult::win(Glicko2Rating {
+    value: 1700.0,
+    deviation: 300.0,
+    volatility: 0.3
+  }));
+  let new_rating = glicko2::new_rating(example_rating.into(), &results, 0.3);
 }

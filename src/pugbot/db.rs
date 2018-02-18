@@ -47,7 +47,7 @@ pub fn create_user_and_ratings(
   user: User
 ) -> Result<(), String> {
 
-  match insert_into(users).values(&IUsers::from(user)).get_result::<QUsers>(&*conn) {
+  match insert_into(users).values(&user).get_result::<QUsers>(&*conn) {
     Ok(user_record) => match create_rating(conn, mode_id, user_record) {
       Ok(_) => Ok(()),
       e => Err(format!("{:?}", e))

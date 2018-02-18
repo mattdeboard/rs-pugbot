@@ -19,6 +19,7 @@ pub mod models;
 pub mod schema;
 pub mod tables;
 pub mod traits;
+pub mod user;
 
 use bigdecimal::BigDecimal;
 use models::draft_pool::DraftPool;
@@ -29,16 +30,13 @@ use serenity::model::channel::{ Embed, Message };
 use serenity::model::event::ResumedEvent;
 use serenity::model::gateway::Ready;
 use serenity::model::id::UserId;
-use serenity::model::user::User;
 use serenity::prelude::*;
 use serenity::http;
 use std::collections::HashSet;
 use std::convert::From;
 use std::env;
 use std::ops::Range;
-use std::str::FromStr;
-use tables::insert::{ Users as IUsers };
-use tables::query::{ Users as QUsers };
+use tables::query::{ Users as QUsers, UserRatings as QUserRatings };
 use tables::insert::{ UserRatings as IUserRatings };
 
 struct Handler;
@@ -143,14 +141,19 @@ fn bot_owners() -> HashSet<UserId> {
   }
 }
 
-impl From<User> for IUsers {
-  fn from(user: User) -> IUsers {
-    IUsers {
-      bot: user.bot,
-      discriminator: user.discriminator as i32,
-      name: user.name
+pub fn new_rating_from_outcome(
+  original_rating: Glicko2Rating,
+  opposing_team: Team,
+  outcome: Outcome
+) -> Glicko2Rating {
+  let results: Vec<GameResult> = opposing_team.glicko2_ratings.into_iter().map(
+    |r| match outcome {
+      Outcome::Win => GameResult::win(r),
+      Outcome::Loss => GameResult::loss(r),
+      Outcome::Draw => GameResult::draw(r)
     }
-  }
+  ).collect();
+  new_rating(original_rating, &results, 0.3)
 }
 
 impl From<QUsers> for IUserRatings {
