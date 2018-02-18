@@ -19,9 +19,7 @@ pub mod models;
 pub mod schema;
 pub mod tables;
 pub mod traits;
-pub mod user;
 
-use bigdecimal::BigDecimal;
 use models::draft_pool::DraftPool;
 use models::game::Game;
 use serenity::builder::CreateEmbed;
@@ -36,8 +34,6 @@ use std::collections::HashSet;
 use std::convert::From;
 use std::env;
 use std::ops::Range;
-use tables::query::{ Users as QUsers, UserRatings as QUserRatings };
-use tables::insert::{ UserRatings as IUserRatings };
 
 struct Handler;
 
@@ -138,17 +134,5 @@ fn bot_owners() -> HashSet<UserId> {
       set
     },
     Err(why) => panic!("Couldn't get application info: {:?}", why),
-  }
-}
-
-impl From<QUsers> for IUserRatings {
-  fn from(record: QUsers) -> IUserRatings {
-    IUserRatings {
-      user_id: record.user_id,
-      rating: None,
-      deviation: None,
-      volatility: None,
-      game_mode_id: 0
-    }
   }
 }

@@ -11,7 +11,7 @@ pub mod query {
 
   #[primary_key(game_mode_id)]
   #[table_name="game_modes"]
-  #[belongs_to(GameTitles)]
+  #[belongs_to(game_titles)]
   #[derive(Debug, Queryable, Associations)]
   pub struct GameModes {
     pub game_mode_id: i32,
@@ -20,19 +20,9 @@ pub mod query {
     pub team_size: i32
   }
 
-  #[primary_key(user_id)]
-  #[table_name="users"]
-  #[derive(Debug, Queryable, Associations)]
-  pub struct Users {
-    pub user_id: i32,
-    pub bot: bool,
-    pub discriminator: i32,
-    pub name: String
-  }
-
   #[table_name = "user_ratings"]
   #[derive(Debug, Queryable, Associations)]
-  #[belongs_to(Users, GameModes)]
+  #[belongs_to(users, game_modes)]
   pub struct UserRatings {
     pub id: i32,
     pub user_id: i32,
@@ -56,7 +46,7 @@ pub mod insert {
 
   #[primary_key(game_mode_id)]
   #[table_name="game_modes"]
-  #[belongs_to(GameTitles)]
+  #[belongs_to(game_titles)]
   #[derive(Insertable)]
   pub struct GameModes {
     pub game_title_id: i32,
@@ -64,17 +54,9 @@ pub mod insert {
     pub team_size: i32
   }
 
-  #[table_name="users"]
-  #[derive(Insertable)]
-  pub struct Users {
-    pub bot: bool,
-    pub discriminator: i32,
-    pub name: String
-  }
-
   #[table_name = "user_ratings"]
   #[derive(Insertable)]
-  #[belongs_to(Users, GameModes)]
+  #[belongs_to(users, game_modes)]
   pub struct UserRatings {
     pub user_id: i32,
     pub rating: Option<BigDecimal>,

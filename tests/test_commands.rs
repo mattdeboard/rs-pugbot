@@ -1,8 +1,6 @@
 extern crate bigdecimal;
 extern crate diesel;
-extern crate glicko2;
 extern crate kankyo;
-extern crate num;
 extern crate pugbot;
 extern crate r2d2;
 extern crate r2d2_diesel;
@@ -11,9 +9,6 @@ extern crate serde_json;
 extern crate serenity;
 
 use diesel::prelude::*;
-use diesel::sql_query;
-use diesel::RunQueryDsl;
-use glicko2::{GameResult, Glicko2Rating};
 use pugbot::commands;
 use pugbot::db::init_pool;
 use pugbot::models::game::{ Game, Phases };
