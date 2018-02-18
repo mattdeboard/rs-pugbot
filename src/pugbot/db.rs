@@ -1,4 +1,5 @@
 use diesel::{ Connection, RunQueryDsl, PgConnection };
+use diesel::result::Error;
 use diesel::insert_into;
 use r2d2;
 use r2d2_diesel::ConnectionManager;
@@ -46,26 +47,17 @@ pub fn create_user_and_ratings(
 ) -> Result<(), String> {
 
   match insert_into(users).values(&IUsers::from(user)).get_result::<QUsers>(&*conn) {
-    Ok(user_record) => if let Ok(_ratings_record) = insert_into(user_ratings)
-      .values(&IUserRatings::from(user_record))
-      .get_result::<QUserRatings>(&*conn) {
-        Ok(())
-      } else {
-        Err("No user_ratings reckid created".to_string())
-      },
-    Err(e) => Err(format!("{:?}", e))
+    Ok(user_record) => match get_or_create_ratings(conn, user_record) {
+      Ok(_) => Ok(()),
+      e => Err(format!("{:?}", e))
+    },
+    e => Err(format!("{:?}", e))
   }
+}
 
-  // if let Ok(user_record) = insert_into(users).values(&IUsers::from(user)).get_result::<QUsers>(&*conn) {
-  //   if let Ok(_ratings_record) = insert_into(user_ratings)
-  //     .values(&IUserRatings::from(user_record))
-  //     .get_result::<QUserRatings>(&*conn)
-  //   {
-  //     Ok(())
-  //   } else {
-  //     Err("Could not create user_ratings record".to_string())
-  //   }
-  // } else {
-  //   Err("Could not create users record".to_string())
-  // }
+pub fn get_or_create_ratings(
+  conn: r2d2::PooledConnection<ConnectionManager<PgConnection>>,
+  user_record: QUsers
+) -> Result<usize, Error> {
+  insert_into(user_ratings).values(&IUserRatings::from(user_record)).execute(&*conn)
 }
