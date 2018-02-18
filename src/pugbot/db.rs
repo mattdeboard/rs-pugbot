@@ -1,4 +1,4 @@
-use diesel::{ Connection, RunQueryDsl, PgConnection };
+use diesel::{ Connection, QueryDsl, RunQueryDsl, PgConnection };
 use diesel::result::Error;
 use diesel::insert_into;
 use r2d2;
@@ -8,10 +8,16 @@ use std::env;
 use std::ops::Deref;
 use typemap::Key;
 
+use schema::game_modes::dsl::{ game_modes };
+use schema::game_titles::dsl::*;
 use schema::users::dsl::*;
 use schema::user_ratings::dsl::*;
 use tables::insert::{ Users as IUsers, UserRatings as IUserRatings };
-use tables::query::{ Users as QUsers, UserRatings as QUserRatings };
+use tables::query::{
+  GameModes as QModes,
+  GameTitles as QTitles,
+  Users as QUsers
+};
 
 // Connection request guard type: a wrapper around an r2d2 pooled connection.
 pub struct DbConn(pub r2d2::PooledConnection<ConnectionManager<PgConnection>>);
@@ -64,4 +70,24 @@ pub fn create_rating(
   let mut ratings = IUserRatings::from(user_record);
   ratings.game_mode_id = mode_id;
   insert_into(user_ratings).values(&ratings).execute(&*conn)
+}
+
+pub fn find_game_mode(
+  conn: r2d2::PooledConnection<ConnectionManager<PgConnection>>,
+  mode_id: i32
+) -> QModes {
+  game_modes
+    .find(mode_id)
+    .get_result::<QModes>(&*conn)
+    .unwrap()
+}
+
+pub fn find_game_title(
+  conn: r2d2::PooledConnection<ConnectionManager<PgConnection>>,
+  title_id: i32
+) -> QTitles {
+  game_titles
+    .find(title_id)
+    .get_result::<QTitles>(&*conn)
+    .unwrap()
 }

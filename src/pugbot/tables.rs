@@ -1,9 +1,10 @@
 pub mod query {
   use bigdecimal::BigDecimal;
+  use schema::{ game_modes, game_titles };
 
   #[primary_key(game_title_id)]
   #[table_name="game_titles"]
-  #[derive(Debug, Queryable, Associations)]
+  #[derive(Debug, Identifiable, Queryable, Associations)]
   pub struct GameTitles {
     pub game_title_id: i32,
     pub game_name: String
@@ -12,7 +13,7 @@ pub mod query {
   #[primary_key(game_mode_id)]
   #[table_name="game_modes"]
   #[belongs_to(GameTitles)]
-  #[derive(Debug, Queryable, Associations)]
+  #[derive(Debug, Identifiable, Queryable, Associations)]
   pub struct GameModes {
     pub game_mode_id: i32,
     pub game_title_id: i32,
@@ -45,7 +46,6 @@ pub mod query {
 
 pub mod insert {
   use bigdecimal::BigDecimal;
-  use glicko2::Glicko2Rating;
   use schema::*;
 
   #[primary_key(game_title_id)]

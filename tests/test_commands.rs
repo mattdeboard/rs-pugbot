@@ -52,7 +52,7 @@ fn update_members() {
   let message = p!(Message, "message");
   let key = "TEAM_SIZE";
   env::set_var(key, "1");
-  let game = &mut Game::new(None, DraftPool::new(vec![gen_test_user()]));
+  let game = &mut Game::new(None, DraftPool::new(vec![gen_test_user()]), 1);
   assert_eq!(game.phase, Some(Phases::PlayerRegistration));
   let members = commands::add::update_members(game, &message, false);
   // There should be one member in the members vec to start with: our test user.
@@ -65,7 +65,7 @@ fn update_members() {
 #[test]
 fn select_captains() {
   let message = p!(Message, "message");
-  let game = &mut Game::new(None, DraftPool::new(vec![gen_test_user()]));
+  let game = &mut Game::new(None, DraftPool::new(vec![gen_test_user()]), 1);
   game.draft_pool.add_member(message.author);
   assert_eq!(game.phase, Some(Phases::PlayerRegistration));
   assert_eq!(game.select_captains(), Err("We aren't picking captains, yet!"));
@@ -100,4 +100,6 @@ pub fn connection() -> r2d2::PooledConnection<ConnectionManager<PgConnection>> {
 #[allow(unused_must_use)]
 fn write_to_db() {
   assert_eq!(create_user_and_ratings(connection(), 1 as i32, gen_test_user()), Ok(()));
+  assert_eq!(find_game_mode(connection(), 1).game_title_id, 1);
+  assert_eq!(find_game_title(connection(), 1).game_name, "Overwatch");
 }
