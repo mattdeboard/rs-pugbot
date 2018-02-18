@@ -95,29 +95,3 @@ pub fn connection() -> r2d2::PooledConnection<ConnectionManager<PgConnection>> {
 fn write_to_db() {
   assert_eq!(create_user_and_ratings(connection(), 1 as i32, gen_test_user()), Ok(()));
 }
-
-#[test]
-fn update_glicko2_rating() {
-  let example_rating = Glicko2Rating {
-    value: 1500.0,
-    deviation: 200.0,
-    volatility: 0.3
-  };
-  let mut results = vec![];
-  results.push(GameResult::win(Glicko2Rating {
-    value: 1400.0,
-    deviation: 30.0,
-    volatility: 0.3
-  }));
-  results.push(GameResult::win(Glicko2Rating {
-    value: 1550.0,
-    deviation: 100.0,
-    volatility: 0.3
-  }));
-  results.push(GameResult::win(Glicko2Rating {
-    value: 1700.0,
-    deviation: 300.0,
-    volatility: 0.3
-  }));
-  let new_rating = glicko2::new_rating(example_rating.into(), &results, 0.3);
-}

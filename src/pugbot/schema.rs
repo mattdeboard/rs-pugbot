@@ -31,6 +31,7 @@ table! {
         bot -> Bool,
         discriminator -> Int4,
         name -> Varchar,
+        discord_user_id -> Int4,
     }
 }
 

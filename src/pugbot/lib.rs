@@ -141,21 +141,6 @@ fn bot_owners() -> HashSet<UserId> {
   }
 }
 
-pub fn new_rating_from_outcome(
-  original_rating: Glicko2Rating,
-  opposing_team: Team,
-  outcome: Outcome
-) -> Glicko2Rating {
-  let results: Vec<GameResult> = opposing_team.glicko2_ratings.into_iter().map(
-    |r| match outcome {
-      Outcome::Win => GameResult::win(r),
-      Outcome::Loss => GameResult::loss(r),
-      Outcome::Draw => GameResult::draw(r)
-    }
-  ).collect();
-  new_rating(original_rating, &results, 0.3)
-}
-
 impl From<QUsers> for IUserRatings {
   fn from(record: QUsers) -> IUserRatings {
     IUserRatings {
