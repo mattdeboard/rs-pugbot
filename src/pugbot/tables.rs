@@ -45,6 +45,7 @@ pub mod query {
 
 pub mod insert {
   use bigdecimal::BigDecimal;
+  use glicko2::Glicko2Rating;
   use schema::*;
 
   #[primary_key(game_title_id)]

@@ -7,7 +7,9 @@
 
 extern crate bigdecimal;
 extern crate env_logger;
+extern crate glicko2;
 extern crate kankyo;
+extern crate num;
 extern crate r2d2;
 extern crate r2d2_diesel;
 extern crate rand;
@@ -21,8 +23,10 @@ pub mod tables;
 pub mod traits;
 
 use bigdecimal::BigDecimal;
+use glicko2::Glicko2Rating;
 use models::draft_pool::DraftPool;
 use models::game::Game;
+use num::traits::cast::ToPrimitive;
 use serenity::builder::CreateEmbed;
 use serenity::framework::StandardFramework;
 use serenity::model::channel::{ Embed, Message };
@@ -36,10 +40,8 @@ use std::collections::HashSet;
 use std::convert::From;
 use std::env;
 use std::ops::Range;
-use std::str::FromStr;
-use tables::insert::{ Users as IUsers };
-use tables::query::{ Users as QUsers };
-use tables::insert::{ UserRatings as IUserRatings };
+use tables::query::{ Users as QUsers, UserRatings as QUserRatings };
+use tables::insert::{ Users as IUsers, UserRatings as IUserRatings };
 
 struct Handler;
 
@@ -161,6 +163,28 @@ impl From<QUsers> for IUserRatings {
       deviation: None,
       volatility: None,
       game_mode_id: 0
+    }
+  }
+}
+
+impl From<Glicko2Rating> for IUserRatings {
+  fn from(rating: Glicko2Rating) -> IUserRatings {
+    IUserRatings {
+      user_id: 0,
+      rating: Some(BigDecimal::from(rating.value)),
+      deviation: Some(BigDecimal::from(rating.deviation)),
+      volatility: Some(BigDecimal::from(rating.volatility)),
+      game_mode_id: 0
+    }
+  }
+}
+
+impl From<QUserRatings> for Glicko2Rating {
+  fn from(user_rating: QUserRatings) -> Glicko2Rating {
+    Glicko2Rating {
+      value:  user_rating.rating.unwrap().to_f64().unwrap(),
+      deviation: user_rating.deviation.unwrap().to_f64().unwrap(),
+      volatility: user_rating.volatility.unwrap().to_f64().unwrap()
     }
   }
 }
