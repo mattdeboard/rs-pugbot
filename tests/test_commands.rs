@@ -1,20 +1,32 @@
+extern crate bigdecimal;
+extern crate diesel;
+extern crate kankyo;
 extern crate pugbot;
+extern crate r2d2;
+extern crate r2d2_diesel;
 extern crate serde;
 extern crate serde_json;
 extern crate serenity;
 
+use diesel::prelude::*;
+use diesel::sql_query;
+use diesel::RunQueryDsl;
 use pugbot::commands;
+use pugbot::db::init_pool;
 use pugbot::models::game::{ Game, Phases };
 use pugbot::models::draft_pool::DraftPool;
 use pugbot::traits::has_members::HasMembers;
 use pugbot::traits::phased::Phased;
+use r2d2_diesel::ConnectionManager;
 use serde::de::Deserialize;
 use serde_json::Value;
 use serenity::model::channel::{ Message };
 use serenity::model::id::UserId;
 use serenity::model::user::User;
-use std::env::set_var;
+use std::env;
 use std::fs::File;
+
+use pugbot::db::*;
 
 macro_rules! p {
   ($s:ident, $filename:expr) => ({
@@ -39,14 +51,14 @@ fn gen_test_user() -> User {
 fn update_members() {
   let message = p!(Message, "message");
   let key = "TEAM_SIZE";
-  set_var(key, "1");
+  env::set_var(key, "1");
   let game = &mut Game::new(None, DraftPool::new(vec![gen_test_user()]));
   assert_eq!(game.phase, Some(Phases::PlayerRegistration));
-  let users = commands::add::update_members(game, &message, false);
+  let members = commands::add::update_members(game, &message, false);
   // There should be one member in the members vec to start with: our test user.
   // `update_members` above should add an additional user, the author of the message (which is
   // defined in ./resources/message.json).
-  assert_eq!(users.len(), 2);
+  assert_eq!(members.len(), 2);
   assert_eq!(game.phase, Some(Phases::CaptainSelection));
 }
 
@@ -66,4 +78,26 @@ fn select_captains() {
   assert_eq!(game.draft_pool.available_players.len(), 0);
   // There should now be two teams built.
   assert_eq!(game.teams.clone().unwrap().len(), 2);
+}
+
+pub fn connection() -> r2d2::PooledConnection<ConnectionManager<PgConnection>> {
+  let pool = init_pool(Some("postgres://pugbot:pugbot@localhost:5432/test_pugbot".to_string()));
+  let conn = pool.get().unwrap();
+  conn.begin_test_transaction().unwrap();
+  sql_query("DROP TABLE IF EXISTS users CASCADE").execute(&*conn).unwrap();
+  sql_query("create table users (\
+             user_id serial primary key,\
+             bot bool not null default false,\
+             discriminator varchar not null,\
+             name varchar not null\
+             )")
+  .execute(&*conn)
+  .unwrap();
+  conn
+}
+
+#[test]
+#[allow(unused_must_use)]
+fn write_to_db() {
+  assert_eq!(create_user_and_ratings(connection(), gen_test_user()), Ok(()));
 }
