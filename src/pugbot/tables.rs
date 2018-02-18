@@ -3,7 +3,7 @@ pub mod query {
 
   #[primary_key(user_id)]
   #[table_name="users"]
-  #[derive(Queryable, Associations)]
+  #[derive(Debug, Queryable, Associations)]
   pub struct Users {
     pub user_id: i32,
     pub bot: bool,
@@ -12,12 +12,14 @@ pub mod query {
   }
 
   #[table_name = "user_ratings"]
-  #[derive(Queryable, Associations)]
+  #[derive(Debug, Queryable, Associations)]
   #[belongs_to(Users)]
   pub struct UserRatings {
     pub id: i32,
     pub user_id: i32,
-    pub rating: BigDecimal
+    pub rating: Option<BigDecimal>,
+    pub deviation: Option<BigDecimal>,
+    pub volatility: Option<BigDecimal>
   }
 }
 
@@ -38,6 +40,8 @@ pub mod insert {
   #[belongs_to(Users)]
   pub struct UserRatings {
     pub user_id: i32,
-    pub rating: BigDecimal
+    pub rating: Option<BigDecimal>,
+    pub deviation: Option<BigDecimal>,
+    pub volatility: Option<BigDecimal>
   }
 }

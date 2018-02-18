@@ -3,6 +3,8 @@ table! {
         id -> Int4,
         user_id -> Int4,
         rating -> Numeric,
+        deviation -> Numeric,
+        volatility -> Numeric,
     }
 }
 

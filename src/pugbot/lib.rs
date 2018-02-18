@@ -157,7 +157,9 @@ impl From<QUsers> for IUserRatings {
   fn from(record: QUsers) -> IUserRatings {
     IUserRatings {
       user_id: record.user_id,
-      rating: BigDecimal::from_str("0.00").unwrap()
+      rating: None,
+      deviation: None,
+      volatility: None
     }
   }
 }
