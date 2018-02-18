@@ -27,6 +27,13 @@ pub enum Phases {
   ResultRecording
 }
 
+#[derive(PartialEq)]
+pub enum Outcome {
+  Win,
+  Loss,
+  Draw
+}
+
 impl Game {
   pub fn new(teams: Option<Vec<Team>>, draft_pool: DraftPool, mode_id: i32) -> Game {
     Game {

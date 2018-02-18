@@ -23,9 +23,9 @@ pub mod tables;
 pub mod traits;
 
 use bigdecimal::BigDecimal;
-use glicko2::Glicko2Rating;
+use glicko2::{ GameResult, Glicko2Rating, new_rating };
 use models::draft_pool::DraftPool;
-use models::game::Game;
+use models::game::{ Game, Outcome };
 use models::team::Team;
 use num::traits::cast::ToPrimitive;
 use serenity::builder::CreateEmbed;
@@ -157,6 +157,21 @@ impl From<User> for IUsers {
       discord_user_id: user.id.0 as i32,
     }
   }
+}
+
+pub fn new_rating_from_outcome(
+  original_rating: Glicko2Rating,
+  opposing_team: Team,
+  outcome: Outcome
+) -> Glicko2Rating {
+  let results: Vec<GameResult> = opposing_team.glicko2_ratings.into_iter().map(
+    |r| match outcome {
+      Outcome::Win => GameResult::win(r),
+      Outcome::Loss => GameResult::loss(r),
+      Outcome::Draw => GameResult::draw(r)
+    }
+  ).collect();
+  new_rating(original_rating, &results, 0.3)
 }
 
 impl From<QUsers> for IUserRatings {
