@@ -17,10 +17,8 @@ pub mod commands;
 pub mod db;
 pub mod models;
 pub mod schema;
-pub mod tables;
 pub mod traits;
 
-use bigdecimal::BigDecimal;
 use models::draft_pool::DraftPool;
 use models::game::Game;
 use serenity::builder::CreateEmbed;
@@ -29,17 +27,12 @@ use serenity::model::channel::{ Embed, Message };
 use serenity::model::event::ResumedEvent;
 use serenity::model::gateway::Ready;
 use serenity::model::id::UserId;
-use serenity::model::user::User;
 use serenity::prelude::*;
 use serenity::http;
 use std::collections::HashSet;
 use std::convert::From;
 use std::env;
 use std::ops::Range;
-use std::str::FromStr;
-use tables::insert::{ Users as IUsers };
-use tables::query::{ Users as QUsers };
-use tables::insert::{ UserRatings as IUserRatings };
 
 struct Handler;
 
@@ -140,27 +133,5 @@ fn bot_owners() -> HashSet<UserId> {
       set
     },
     Err(why) => panic!("Couldn't get application info: {:?}", why),
-  }
-}
-
-impl From<User> for IUsers {
-  fn from(user: User) -> IUsers {
-    IUsers {
-      bot: user.bot,
-      discriminator: user.discriminator as i32,
-      name: user.name
-    }
-  }
-}
-
-impl From<QUsers> for IUserRatings {
-  fn from(record: QUsers) -> IUserRatings {
-    IUserRatings {
-      user_id: record.user_id,
-      rating: None,
-      deviation: None,
-      volatility: None,
-      game_mode_id: 0
-    }
   }
 }

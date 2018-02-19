@@ -1,4 +1,4 @@
-use diesel::{ Connection, RunQueryDsl, PgConnection };
+use diesel::{ RunQueryDsl, PgConnection };
 use diesel::result::Error;
 use diesel::insert_into;
 use r2d2;
@@ -8,10 +8,10 @@ use std::env;
 use std::ops::Deref;
 use typemap::Key;
 
+use models::user::DiscordUser;
 use schema::users::dsl::*;
-use schema::user_ratings::dsl::*;
-use tables::insert::{ Users as IUsers, UserRatings as IUserRatings };
-use tables::query::{ Users as QUsers, UserRatings as QUserRatings };
+use schema::user_ratings;
+use models::user_rating::UserRating;
 
 // Connection request guard type: a wrapper around an r2d2 pooled connection.
 pub struct DbConn(pub r2d2::PooledConnection<ConnectionManager<PgConnection>>);
@@ -47,7 +47,7 @@ pub fn create_user_and_ratings(
   user: User
 ) -> Result<(), String> {
 
-  match insert_into(users).values(&IUsers::from(user)).get_result::<QUsers>(&*conn) {
+  match insert_into(users).values(&user).get_result::<DiscordUser>(&*conn) {
     Ok(user_record) => match create_rating(conn, mode_id, user_record) {
       Ok(_) => Ok(()),
       e => Err(format!("{:?}", e))
@@ -59,9 +59,9 @@ pub fn create_user_and_ratings(
 pub fn create_rating(
   conn: r2d2::PooledConnection<ConnectionManager<PgConnection>>,
   mode_id: i32,
-  user_record: QUsers
+  user_record: DiscordUser
 ) -> Result<usize, Error> {
-  let mut ratings = IUserRatings::from(user_record);
+  let mut ratings = UserRating::from(user_record);
   ratings.game_mode_id = mode_id;
-  insert_into(user_ratings).values(&ratings).execute(&*conn)
+  insert_into(user_ratings::table).values(&ratings).execute(&*conn)
 }
