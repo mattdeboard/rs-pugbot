@@ -11,7 +11,7 @@ use typemap::Key;
 use models::user::DiscordUser;
 use schema::users::dsl::*;
 use schema::user_ratings;
-use tables::insert::{ UserRatings as IUserRatings};
+use models::user_rating::UserRating;
 
 // Connection request guard type: a wrapper around an r2d2 pooled connection.
 pub struct DbConn(pub r2d2::PooledConnection<ConnectionManager<PgConnection>>);
@@ -61,7 +61,7 @@ pub fn create_rating(
   mode_id: i32,
   user_record: DiscordUser
 ) -> Result<usize, Error> {
-  let mut ratings = IUserRatings::from(user_record);
+  let mut ratings = UserRating::from(user_record);
   ratings.game_mode_id = mode_id;
   insert_into(user_ratings::table).values(&ratings).execute(&*conn)
 }

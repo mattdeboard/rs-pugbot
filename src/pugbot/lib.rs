@@ -17,7 +17,6 @@ pub mod commands;
 pub mod db;
 pub mod models;
 pub mod schema;
-pub mod tables;
 pub mod traits;
 
 use models::draft_pool::DraftPool;

@@ -5,7 +5,7 @@ use diesel::dsl::Eq;
 use schema::users;
 use serenity::model::id::UserId;
 use serenity::model::user::User;
-use tables::insert::{ UserRatings as IUserRatings };
+use models::user_rating::UserRating;
 
 #[derive(Debug)]
 pub struct DiscordUser {
@@ -62,9 +62,10 @@ impl Queryable<users::SqlType, Pg> for DiscordUser {
   }
 }
 
-impl From<DiscordUser> for IUserRatings {
-  fn from(record: DiscordUser) -> IUserRatings {
-    IUserRatings {
+impl From<DiscordUser> for UserRating {
+  fn from(record: DiscordUser) -> UserRating {
+    UserRating {
+      id: None,
       user_id: record.database_id.unwrap(),
       rating: None,
       deviation: None,
