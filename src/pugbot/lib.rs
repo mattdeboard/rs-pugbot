@@ -21,12 +21,10 @@ pub mod models;
 pub mod schema;
 pub mod traits;
 
-use bigdecimal::BigDecimal;
 use glicko2::{ GameResult, Glicko2Rating, new_rating };
 use models::draft_pool::DraftPool;
 use models::game::{ Game, Outcome };
 use models::team::Team;
-use num::traits::cast::ToPrimitive;
 use serenity::builder::CreateEmbed;
 use serenity::framework::StandardFramework;
 use serenity::model::channel::{ Embed, Message };
