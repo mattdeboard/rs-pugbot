@@ -19,7 +19,6 @@ pub mod commands;
 pub mod db;
 pub mod models;
 pub mod schema;
-pub mod tables;
 pub mod traits;
 
 use bigdecimal::BigDecimal;
@@ -34,15 +33,12 @@ use serenity::model::channel::{ Embed, Message };
 use serenity::model::event::ResumedEvent;
 use serenity::model::gateway::Ready;
 use serenity::model::id::UserId;
-use serenity::model::user::User;
 use serenity::prelude::*;
 use serenity::http;
 use std::collections::HashSet;
 use std::convert::From;
 use std::env;
 use std::ops::Range;
-use tables::query::{ Users as QUsers, UserRatings as QUserRatings };
-use tables::insert::{ Users as IUsers, UserRatings as IUserRatings };
 
 struct Handler;
 
@@ -148,17 +144,6 @@ fn bot_owners() -> HashSet<UserId> {
   }
 }
 
-impl From<User> for IUsers {
-  fn from(user: User) -> IUsers {
-    IUsers {
-      bot: user.bot,
-      discriminator: user.discriminator as i32,
-      name: user.name,
-      discord_user_id: user.id.0 as i32,
-    }
-  }
-}
-
 pub fn new_rating_from_outcome(
   original_rating: Glicko2Rating,
   opposing_team: Team,
@@ -172,38 +157,4 @@ pub fn new_rating_from_outcome(
     }
   ).collect();
   new_rating(original_rating, &results, 0.3)
-}
-
-impl From<QUsers> for IUserRatings {
-  fn from(record: QUsers) -> IUserRatings {
-    IUserRatings {
-      user_id: record.user_id,
-      rating: None,
-      deviation: None,
-      volatility: None,
-      game_mode_id: 0
-    }
-  }
-}
-
-impl From<Glicko2Rating> for IUserRatings {
-  fn from(rating: Glicko2Rating) -> IUserRatings {
-    IUserRatings {
-      user_id: 0,
-      rating: Some(BigDecimal::from(rating.value)),
-      deviation: Some(BigDecimal::from(rating.deviation)),
-      volatility: Some(BigDecimal::from(rating.volatility)),
-      game_mode_id: 0
-    }
-  }
-}
-
-impl From<QUserRatings> for Glicko2Rating {
-  fn from(user_rating: QUserRatings) -> Glicko2Rating {
-    Glicko2Rating {
-      value:  user_rating.rating.unwrap().to_f64().unwrap(),
-      deviation: user_rating.deviation.unwrap().to_f64().unwrap(),
-      volatility: user_rating.volatility.unwrap().to_f64().unwrap()
-    }
-  }
 }
