@@ -1,5 +1,6 @@
 extern crate kankyo;
 
+use glicko2::Glicko2Rating;
 use serenity::model::channel::{ Embed, EmbedFooter };
 use serenity::model::user::User;
 use serenity::utils::Colour;
@@ -12,7 +13,8 @@ use ::traits::has_members::HasMembers;
 pub struct Team {
   pub id: usize,
   pub captain: Option<User>,
-  pub members: Vec<User>
+  pub members: Vec<User>,
+  pub glicko2_ratings: Vec<Glicko2Rating>
 }
 
 impl Key for Team {

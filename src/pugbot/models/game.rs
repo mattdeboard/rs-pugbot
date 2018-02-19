@@ -14,7 +14,8 @@ pub struct Game {
   pub draft_pool: DraftPool,
   pub phase: Option<Phases>,
   pub turn_taker: Cycle<Range<usize>>,
-  pub turn_number: usize
+  pub turn_number: usize,
+  pub game_mode_id: i32
 }
 
 #[derive(PartialEq, Debug)]
@@ -26,14 +27,22 @@ pub enum Phases {
   ResultRecording
 }
 
+#[derive(PartialEq)]
+pub enum Outcome {
+  Win,
+  Loss,
+  Draw
+}
+
 impl Game {
-  pub fn new(teams: Option<Vec<Team>>, draft_pool: DraftPool) -> Game {
+  pub fn new(teams: Option<Vec<Team>>, draft_pool: DraftPool, mode_id: i32) -> Game {
     Game {
       teams: teams,
       draft_pool: draft_pool,
       phase: Some(Phases::PlayerRegistration),
       turn_taker: team_id_range().cycle(),
-      turn_number: 1
+      turn_number: 1,
+      game_mode_id: mode_id
     }
   }
 
@@ -68,7 +77,8 @@ impl Game {
             Some(Team {
               id: i,
               captain: Some(user.clone()),
-              members: vec![user]
+              members: vec![user],
+              glicko2_ratings: vec![]
             })
           } else {
             None
@@ -89,6 +99,10 @@ impl Game {
       let member_names: Vec<String> = team.members.iter().map(|user| user.clone().name).collect();
       format!("Team {} roster:\n{}", team.id, member_names.join("\n"))
     }).collect();
+
+    if self.phase == Some(Phases::PlayerDrafting) {
+      self.next_phase();
+    }
 
     Some(Embed {
       author: None,

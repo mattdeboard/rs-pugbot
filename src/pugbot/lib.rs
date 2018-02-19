@@ -7,7 +7,9 @@
 
 extern crate bigdecimal;
 extern crate env_logger;
+extern crate glicko2;
 extern crate kankyo;
+extern crate num;
 extern crate r2d2;
 extern crate r2d2_diesel;
 extern crate rand;
@@ -19,8 +21,10 @@ pub mod models;
 pub mod schema;
 pub mod traits;
 
+use glicko2::{ GameResult, Glicko2Rating, new_rating };
 use models::draft_pool::DraftPool;
-use models::game::Game;
+use models::game::{ Game, Outcome };
+use models::team::Team;
 use serenity::builder::CreateEmbed;
 use serenity::framework::StandardFramework;
 use serenity::model::channel::{ Embed, Message };
@@ -89,6 +93,7 @@ fn queue_size() -> u32 {
   }
 }
 
+#[allow(unused_must_use)]
 pub fn client_setup() -> Client {
   env_logger::init().expect("Failed to initialize env_logger");
   let token = env::var("DISCORD_TOKEN")
@@ -98,7 +103,7 @@ pub fn client_setup() -> Client {
   {
     let mut data = client.data.lock();
     let draft_pool = DraftPool::new(Vec::new());
-    let game = Game::new(None, draft_pool);
+    let game = Game::new(None, draft_pool, 1);
     data.insert::<Game>(game);
     data.insert::<db::Pool>(db::init_pool(None));
   }
@@ -118,6 +123,7 @@ pub fn client_setup() -> Client {
                .cmd(commands::pick::pick)
                .batch_known_as(vec!["p"]))
   );
+  client.start();
   client
 }
 
@@ -134,4 +140,19 @@ fn bot_owners() -> HashSet<UserId> {
     },
     Err(why) => panic!("Couldn't get application info: {:?}", why),
   }
+}
+
+pub fn new_rating_from_outcome(
+  original_rating: Glicko2Rating,
+  opposing_team: Team,
+  outcome: Outcome
+) -> Glicko2Rating {
+  let results: Vec<GameResult> = opposing_team.glicko2_ratings.into_iter().map(
+    |r| match outcome {
+      Outcome::Win => GameResult::win(r),
+      Outcome::Loss => GameResult::loss(r),
+      Outcome::Draw => GameResult::draw(r)
+    }
+  ).collect();
+  new_rating(original_rating, &results, 0.3)
 }

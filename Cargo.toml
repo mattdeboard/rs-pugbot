@@ -20,8 +20,10 @@ diesel_cli = { features = ["postgres"] }
 diesel_codegen = { version = "*", features = ["postgres"] }
 diesel_migrations = "*"
 env_logger = "~0.4"
+glicko2 = "*"
 kankyo = "~0.1"
 log = "~0.3"
+num = "*"
 r2d2 = "*"
 r2d2-diesel = "*"
 rand = "*"
