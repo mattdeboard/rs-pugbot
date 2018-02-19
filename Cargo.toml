@@ -18,6 +18,7 @@ bigdecimal = "*"
 diesel = { version = "*", features = ["chrono", "postgres", "serde_json", "huge-tables", "numeric", "uuid"] }
 diesel_cli = { features = ["postgres"] }
 diesel_codegen = { version = "*", features = ["postgres"] }
+diesel_migrations = "*"
 env_logger = "~0.4"
 kankyo = "~0.1"
 log = "~0.3"

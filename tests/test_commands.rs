@@ -1,5 +1,8 @@
+#![allow(unused_must_use)]
+
 extern crate bigdecimal;
 extern crate diesel;
+extern crate diesel_migrations;
 extern crate kankyo;
 extern crate pugbot;
 extern crate r2d2;
@@ -9,6 +12,7 @@ extern crate serde_json;
 extern crate serenity;
 
 use diesel::prelude::*;
+use diesel_migrations::run_pending_migrations;
 use pugbot::commands;
 use pugbot::db::init_pool;
 use pugbot::models::game::{ Game, Phases };
@@ -82,11 +86,11 @@ pub fn connection() -> r2d2::PooledConnection<ConnectionManager<PgConnection>> {
   let pool = init_pool(Some("postgres://pugbot:pugbot@localhost:5432/test_pugbot".to_string()));
   let conn = pool.get().unwrap();
   conn.begin_test_transaction().unwrap();
+  run_pending_migrations(&*conn);
   conn
 }
 
 #[test]
-#[allow(unused_must_use)]
 fn write_to_db() {
   assert_eq!(create_user_and_ratings(connection(), 1 as i32, gen_test_user()), Ok(()));
 }
