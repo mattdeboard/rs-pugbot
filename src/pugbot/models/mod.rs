@@ -5,3 +5,4 @@ pub mod game_title;
 pub mod game_mode;
 pub mod user;
 pub mod user_rating;
+pub mod map;
