@@ -1,4 +1,5 @@
 use models::draft_pool::DraftPool;
+use models::map::{ Map as GameMap };
 use models::team::Team;
 use rand::{ Rng, thread_rng };
 use serenity::model::channel::{ Embed };
@@ -15,7 +16,8 @@ pub struct Game {
   pub phase: Option<Phases>,
   pub turn_taker: Cycle<Range<usize>>,
   pub turn_number: usize,
-  pub game_mode_id: i32
+  pub game_mode_id: i32,
+  pub active_map: Option<GameMap>,
 }
 
 #[derive(PartialEq, Debug)]
@@ -42,7 +44,8 @@ impl Game {
       phase: Some(Phases::PlayerRegistration),
       turn_taker: team_id_range().cycle(),
       turn_number: 1,
-      game_mode_id: mode_id
+      game_mode_id: mode_id,
+      active_map: None,
     }
   }
 

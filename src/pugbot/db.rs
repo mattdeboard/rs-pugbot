@@ -1,4 +1,4 @@
-use diesel::{ QueryDsl, RunQueryDsl, PgConnection };
+use diesel::{ ExpressionMethods, QueryDsl, RunQueryDsl, PgConnection };
 use diesel::result::Error;
 use diesel::insert_into;
 use r2d2;
@@ -10,12 +10,15 @@ use typemap::Key;
 
 use models::game_mode::GameMode;
 use models::game_title::GameTitle;
+use models::map::Map as GameMap;
 use models::user::DiscordUser;
 use models::user_rating::UserRating;
 use schema::game_modes::dsl::*;
 use schema::game_titles::dsl::*;
+// use schema::maps::dsl::*;
 use schema::users::dsl::*;
 use schema::user_ratings;
+use schema::*;
 
 // Connection request guard type: a wrapper around an r2d2 pooled connection.
 pub struct DbConn(pub r2d2::PooledConnection<ConnectionManager<PgConnection>>);
@@ -88,4 +91,17 @@ pub fn find_game_title(
     .find(title_id)
     .get_result::<GameTitle>(&*conn)
     .unwrap()
+}
+
+pub fn select_random_maps(
+  conn: r2d2::PooledConnection<ConnectionManager<PgConnection>>,
+  game_id: i32
+) -> Vec<GameMap> {
+  no_arg_sql_function!(RANDOM, (), "Represents the sql RANDOM() function");
+  maps::table
+    .filter(maps::game_title_id.eq(game_id))
+    .order(RANDOM)
+    .limit(3)
+    .get_results::<GameMap>(&*conn)
+    .expect("Unable to fetch game maps.")
 }
