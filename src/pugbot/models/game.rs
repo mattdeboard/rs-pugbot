@@ -54,7 +54,9 @@ impl Game {
       map_votes: [
         (1, 0),
         (2, 0),
-        (3, 0)
+        (3, 0),
+        (4, 0),
+        (5, 0)
       ].iter().cloned().collect(),
       phase: Some(Phases::PlayerRegistration),
       teams: teams,
