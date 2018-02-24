@@ -1,4 +1,6 @@
-use diesel::{ ExpressionMethods, QueryDsl, RunQueryDsl, PgConnection };
+use diesel::{ ExpressionMethods, JoinOnDsl, QueryDsl, RunQueryDsl, PgConnection };
+use diesel::dsl::sql;
+use diesel::query_dsl::InternalJoinDsl;
 use diesel::result::Error;
 use diesel::insert_into;
 use r2d2;
@@ -13,9 +15,6 @@ use models::game_title::GameTitle;
 use models::map::Map as GameMap;
 use models::user::DiscordUser;
 use models::user_rating::UserRating;
-use schema::game_modes::dsl::*;
-use schema::game_titles::dsl::*;
-// use schema::maps::dsl::*;
 use schema::users::dsl::*;
 use schema::user_ratings;
 use schema::*;
@@ -73,35 +72,18 @@ pub fn create_rating(
   insert_into(user_ratings::table).values(&ratings).execute(&*conn)
 }
 
-pub fn find_game_mode(
+pub fn select_maps_for_mode_id(
   conn: r2d2::PooledConnection<ConnectionManager<PgConnection>>,
   mode_id: i32
-) -> GameMode {
-  game_modes
-    .find(mode_id)
-    .get_result::<GameMode>(&*conn)
-    .unwrap()
-}
-
-pub fn find_game_title(
-  conn: r2d2::PooledConnection<ConnectionManager<PgConnection>>,
-  title_id: i32
-) -> GameTitle {
-  game_titles
-    .find(title_id)
-    .get_result::<GameTitle>(&*conn)
-    .unwrap()
-}
-
-pub fn select_random_maps(
-  conn: r2d2::PooledConnection<ConnectionManager<PgConnection>>,
-  game_id: i32
 ) -> Vec<GameMap> {
+  allow_tables_to_appear_in_same_query!(game_titles, game_modes, maps);
   no_arg_sql_function!(RANDOM, (), "Represents the sql RANDOM() function");
   maps::table
-    .filter(maps::game_title_id.eq(game_id))
+    .inner_join(game_modes::table.on(game_modes::game_mode_id.eq(mode_id)))
+    .filter(maps::game_title_id.eq(game_modes::game_title_id))
     .order(RANDOM)
     .limit(3)
+    .select(maps::all_columns)
     .get_results::<GameMap>(&*conn)
     .expect("Unable to fetch game maps.")
 }
