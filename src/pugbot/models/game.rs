@@ -3,6 +3,7 @@ use models::map::{ Map as GameMap };
 use models::team::Team;
 use rand::{ Rng, thread_rng };
 use serenity::model::channel::{ Embed };
+use serenity::model::id::UserId;
 use serenity::utils::Colour;
 use std::collections::HashMap;
 use std::iter::Cycle;
@@ -13,6 +14,7 @@ use team_id_range;
 
 pub struct Game {
   pub active_map: Option<GameMap>,
+  pub eligible_voter_ids: Vec<UserId>,
   pub map_choices: Vec<GameMap>,
   pub map_votes: HashMap<i32, i32>,
   pub draft_pool: DraftPool,
@@ -41,9 +43,12 @@ pub enum Outcome {
 
 impl Game {
   pub fn new(teams: Option<Vec<Team>>, draft_pool: DraftPool, mode_id: i32, map_choices: Vec<GameMap>) -> Game {
+    let members = draft_pool.members.clone();
+
     Game {
       active_map: None,
       draft_pool: draft_pool,
+      eligible_voter_ids: members.iter().map(|m| m.id).collect(),
       game_mode_id: mode_id,
       map_choices: map_choices,
       map_votes: [
@@ -133,6 +138,10 @@ impl Game {
     })
 
   }
+
+  pub fn register_vote(&mut self, user_id: UserId) {
+    self.eligible_voter_ids.retain(|&id| id != user_id);
+  }
 }
 
 impl Phased for Game {
@@ -149,7 +158,22 @@ impl Phased for Game {
         self.turn_taker = team_id_range().cycle();
         Some(Phases::MapSelection)
       },
-      Some(Phases::MapSelection) => Some(Phases:: ResultRecording),
+      Some(Phases::MapSelection) => {
+        let mut winning_map_index: i32 = 0;
+        let mut winning_vote_amount: i32 = 0;
+        for (key, val) in self.map_votes.iter() {
+          if *val > winning_vote_amount {
+            winning_map_index = *key;
+            winning_vote_amount = *val;
+          }
+        }
+        let choice = &self.map_choices[winning_map_index as usize - 1];
+        self.active_map = Some(GameMap {
+          game_title_id: choice.game_title_id,
+          map_name: choice.map_name.clone()
+        });
+        Some(Phases:: ResultRecording)
+      },
       _ => None
     };
   }
