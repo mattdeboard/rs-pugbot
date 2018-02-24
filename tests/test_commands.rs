@@ -17,7 +17,6 @@ use pugbot::commands;
 use pugbot::db::init_pool;
 use pugbot::models::game::{ Game, Phases };
 use pugbot::models::draft_pool::DraftPool;
-use pugbot::models::map::{ Map as GameMap };
 use pugbot::traits::has_members::HasMembers;
 use pugbot::traits::phased::Phased;
 use r2d2_diesel::ConnectionManager;
