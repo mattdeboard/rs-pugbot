@@ -125,6 +125,9 @@ pub fn client_setup() -> Client {
       .command("pick", |c| c
                .cmd(commands::pick::pick)
                .batch_known_as(vec!["p"]))
+      .command("vote", |c| c
+               .cmd(commands::mapvote::mapvote)
+               .batch_known_as(vec!["v", "mv"]))
   );
   client.start();
   client

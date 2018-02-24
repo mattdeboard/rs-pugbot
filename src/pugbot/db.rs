@@ -78,7 +78,7 @@ pub fn select_maps_for_mode_id(
     .inner_join(game_modes::table.on(game_modes::game_mode_id.eq(mode_id)))
     .filter(maps::game_title_id.eq(game_modes::game_title_id))
     .order(RANDOM)
-    .limit(3)
+    .limit(5)
     .select(maps::all_columns)
     .get_results::<GameMap>(&*conn)
     .expect("Unable to fetch game maps.")
