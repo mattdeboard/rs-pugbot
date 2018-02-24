@@ -1,5 +1,6 @@
 use models::game::{ Game, Phases };
 use traits::phased::Phased;
+use consume_message;
 
 command!(mapvote(ctx, msg, args) {
   let mut data = ctx.data.lock();
@@ -30,6 +31,7 @@ command!(mapvote(ctx, msg, args) {
 
       if game.eligible_voter_ids.len() == 0 {
         game.next_phase();
+        consume_message(msg, game.map_winner_embed(164, 255, 241).unwrap());
       }
     } else {
       return panic!("Invalid map key");

@@ -144,10 +144,56 @@ impl Game {
   pub fn register_vote(&mut self, user_id: UserId) {
     self.eligible_voter_ids.retain(|&id| id != user_id);
   }
+
+  pub fn map_winner_embed(&self, r: u8, g: u8, b: u8) -> Option<Embed> {
+    let map_name = &self.active_map;
+    Some(Embed {
+      author: None,
+      colour: Colour::from_rgb(r, g, b),
+      description: Some(format!("The winning map is {:?}!", map_name)),
+      footer: None,
+      fields: Vec::new(),
+      image: None,
+      kind: "rich".to_string(),
+      provider: None,
+      thumbnail: None,
+      timestamp: None,
+      title: Some(format!("The winning map is {:?}!", map_name)),
+      url: None,
+      video: None
+    })
+  }
+
+  pub fn map_selection_embed(&self, r: u8, g: u8, b: u8) -> Option<Embed> {
+    let maps: Vec<String> = self.map_choices.iter().enumerate().fold(
+      vec![
+        String::from("Typing `~mv <#>` will register your map vote (You must be on a team to vote)")
+      ],
+      |mut acc, (index, map)| {
+        acc.push(format!("{} -> {}", index + 1, map.map_name));
+        acc
+      }
+    );
+    Some(Embed {
+      author: None,
+      colour: Colour::from_rgb(r, g, b),
+      description: Some(maps.join("\n")),
+      footer: None,
+      fields: Vec::new(),
+      image: None,
+      kind: "rich".to_string(),
+      provider: None,
+      thumbnail: None,
+      timestamp: None,
+      title: Some("Time to pick a map!".to_string()),
+      url: None,
+      video: None
+    })
+  }
 }
 
 impl Phased for Game {
-  fn next_phase(&mut self ) {
+  fn next_phase(&mut self) {
     self.phase = match self.phase {
       Some(Phases::PlayerRegistration) => {
         self.draft_pool.generate_available_players();
