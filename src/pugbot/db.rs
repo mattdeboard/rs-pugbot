@@ -1,6 +1,4 @@
 use diesel::{ ExpressionMethods, JoinOnDsl, QueryDsl, RunQueryDsl, PgConnection };
-use diesel::dsl::sql;
-use diesel::query_dsl::InternalJoinDsl;
 use diesel::result::Error;
 use diesel::insert_into;
 use r2d2;
@@ -10,8 +8,6 @@ use std::env;
 use std::ops::Deref;
 use typemap::Key;
 
-use models::game_mode::GameMode;
-use models::game_title::GameTitle;
 use models::map::Map as GameMap;
 use models::user::DiscordUser;
 use models::user_rating::UserRating;

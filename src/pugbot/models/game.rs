@@ -4,6 +4,7 @@ use models::team::Team;
 use rand::{ Rng, thread_rng };
 use serenity::model::channel::{ Embed };
 use serenity::utils::Colour;
+use std::collections::HashMap;
 use std::iter::Cycle;
 use std::ops::Range;
 use traits::phased::Phased;
@@ -11,13 +12,15 @@ use typemap::Key;
 use team_id_range;
 
 pub struct Game {
-  pub teams: Option<Vec<Team>>,
-  pub draft_pool: DraftPool,
-  pub phase: Option<Phases>,
-  pub turn_taker: Cycle<Range<usize>>,
-  pub turn_number: usize,
-  pub game_mode_id: i32,
   pub active_map: Option<GameMap>,
+  pub map_choices: Vec<GameMap>,
+  pub map_votes: HashMap<i32, i32>,
+  pub draft_pool: DraftPool,
+  pub game_mode_id: i32,
+  pub phase: Option<Phases>,
+  pub teams: Option<Vec<Team>>,
+  pub turn_number: usize,
+  pub turn_taker: Cycle<Range<usize>>,
 }
 
 #[derive(PartialEq, Debug)]
@@ -37,15 +40,21 @@ pub enum Outcome {
 }
 
 impl Game {
-  pub fn new(teams: Option<Vec<Team>>, draft_pool: DraftPool, mode_id: i32) -> Game {
+  pub fn new(teams: Option<Vec<Team>>, draft_pool: DraftPool, mode_id: i32, map_choices: Vec<GameMap>) -> Game {
     Game {
-      teams: teams,
-      draft_pool: draft_pool,
-      phase: Some(Phases::PlayerRegistration),
-      turn_taker: team_id_range().cycle(),
-      turn_number: 1,
-      game_mode_id: mode_id,
       active_map: None,
+      draft_pool: draft_pool,
+      game_mode_id: mode_id,
+      map_choices: map_choices,
+      map_votes: [
+        (1, 0),
+        (2, 0),
+        (3, 0)
+      ].iter().cloned().collect(),
+      phase: Some(Phases::PlayerRegistration),
+      teams: teams,
+      turn_number: 1,
+      turn_taker: team_id_range().cycle(),
     }
   }
 
