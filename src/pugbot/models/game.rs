@@ -1,8 +1,11 @@
 use models::draft_pool::DraftPool;
+use models::map::{ Map as GameMap };
 use models::team::Team;
 use rand::{ Rng, thread_rng };
 use serenity::model::channel::{ Embed };
+use serenity::model::id::UserId;
 use serenity::utils::Colour;
+use std::collections::HashMap;
 use std::iter::Cycle;
 use std::ops::Range;
 use traits::phased::Phased;
@@ -10,12 +13,16 @@ use typemap::Key;
 use team_id_range;
 
 pub struct Game {
-  pub teams: Option<Vec<Team>>,
+  pub active_map: Option<GameMap>,
+  pub eligible_voter_ids: Vec<UserId>,
+  pub map_choices: Vec<GameMap>,
+  pub map_votes: HashMap<i32, i32>,
   pub draft_pool: DraftPool,
+  pub game_mode_id: i32,
   pub phase: Option<Phases>,
-  pub turn_taker: Cycle<Range<usize>>,
+  pub teams: Option<Vec<Team>>,
   pub turn_number: usize,
-  pub game_mode_id: i32
+  pub turn_taker: Cycle<Range<usize>>,
 }
 
 #[derive(PartialEq, Debug)]
@@ -35,14 +42,26 @@ pub enum Outcome {
 }
 
 impl Game {
-  pub fn new(teams: Option<Vec<Team>>, draft_pool: DraftPool, mode_id: i32) -> Game {
+  pub fn new(teams: Option<Vec<Team>>, draft_pool: DraftPool, mode_id: i32, map_choices: Vec<GameMap>) -> Game {
+    let members = draft_pool.members.clone();
+
     Game {
-      teams: teams,
+      active_map: None,
       draft_pool: draft_pool,
+      eligible_voter_ids: members.iter().map(|m| m.id).collect(),
+      game_mode_id: mode_id,
+      map_choices: map_choices,
+      map_votes: [
+        (1, 0),
+        (2, 0),
+        (3, 0),
+        (4, 0),
+        (5, 0)
+      ].iter().cloned().collect(),
       phase: Some(Phases::PlayerRegistration),
-      turn_taker: team_id_range().cycle(),
+      teams: teams,
       turn_number: 1,
-      game_mode_id: mode_id
+      turn_taker: team_id_range().cycle(),
     }
   }
 
@@ -121,10 +140,60 @@ impl Game {
     })
 
   }
+
+  pub fn register_vote(&mut self, user_id: UserId) {
+    self.eligible_voter_ids.retain(|&id| id != user_id);
+  }
+
+  pub fn map_winner_embed(&self, r: u8, g: u8, b: u8) -> Option<Embed> {
+    let map_name = &self.active_map;
+    Some(Embed {
+      author: None,
+      colour: Colour::from_rgb(r, g, b),
+      description: Some(format!("The winning map is {:?}!", map_name)),
+      footer: None,
+      fields: Vec::new(),
+      image: None,
+      kind: "rich".to_string(),
+      provider: None,
+      thumbnail: None,
+      timestamp: None,
+      title: Some(format!("The winning map is {:?}!", map_name)),
+      url: None,
+      video: None
+    })
+  }
+
+  pub fn map_selection_embed(&self, r: u8, g: u8, b: u8) -> Option<Embed> {
+    let maps: Vec<String> = self.map_choices.iter().enumerate().fold(
+      vec![
+        String::from("Typing `~mv <#>` will register your map vote (You must be on a team to vote)")
+      ],
+      |mut acc, (index, map)| {
+        acc.push(format!("{} -> {}", index + 1, map.map_name));
+        acc
+      }
+    );
+    Some(Embed {
+      author: None,
+      colour: Colour::from_rgb(r, g, b),
+      description: Some(maps.join("\n")),
+      footer: None,
+      fields: Vec::new(),
+      image: None,
+      kind: "rich".to_string(),
+      provider: None,
+      thumbnail: None,
+      timestamp: None,
+      title: Some("Time to pick a map!".to_string()),
+      url: None,
+      video: None
+    })
+  }
 }
 
 impl Phased for Game {
-  fn next_phase(&mut self ) {
+  fn next_phase(&mut self) {
     self.phase = match self.phase {
       Some(Phases::PlayerRegistration) => {
         self.draft_pool.generate_available_players();
@@ -137,7 +206,22 @@ impl Phased for Game {
         self.turn_taker = team_id_range().cycle();
         Some(Phases::MapSelection)
       },
-      Some(Phases::MapSelection) => Some(Phases:: ResultRecording),
+      Some(Phases::MapSelection) => {
+        let mut winning_map_index: i32 = 0;
+        let mut winning_vote_amount: i32 = 0;
+        for (key, val) in self.map_votes.iter() {
+          if *val > winning_vote_amount {
+            winning_map_index = *key;
+            winning_vote_amount = *val;
+          }
+        }
+        let choice = &self.map_choices[winning_map_index as usize - 1];
+        self.active_map = Some(GameMap {
+          game_title_id: choice.game_title_id,
+          map_name: choice.map_name.clone()
+        });
+        Some(Phases:: ResultRecording)
+      },
       _ => None
     };
   }

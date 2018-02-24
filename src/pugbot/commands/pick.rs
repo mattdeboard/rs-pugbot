@@ -21,9 +21,10 @@ command!(pick(ctx, msg, args) {
 
   if game.turn_number == max_turns as usize {
     game.next_phase();
+    consume_message(msg, game.drafting_complete_embed(165, 255, 241).unwrap());
+    consume_message(msg, game.map_selection_embed(164, 255, 241).unwrap());
   } else {
     game.turn_number += 1;
   }
 
-  consume_message(msg, game.drafting_complete_embed(165, 255, 241).unwrap());
 });

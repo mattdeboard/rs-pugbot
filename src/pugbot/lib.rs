@@ -103,9 +103,12 @@ pub fn client_setup() -> Client {
   {
     let mut data = client.data.lock();
     let draft_pool = DraftPool::new(Vec::new());
-    let game = Game::new(None, draft_pool, 1);
+    let db_pool = db::init_pool(None);
+    let conn = db_pool.get().unwrap();
+    let map_choices = db::select_maps_for_mode_id(conn, 1);
+    let game = Game::new(None, draft_pool, 1, map_choices);
     data.insert::<Game>(game);
-    data.insert::<db::Pool>(db::init_pool(None));
+    data.insert::<db::Pool>(db_pool);
   }
 
   client.with_framework(
@@ -122,6 +125,9 @@ pub fn client_setup() -> Client {
       .command("pick", |c| c
                .cmd(commands::pick::pick)
                .batch_known_as(vec!["p"]))
+      .command("vote", |c| c
+               .cmd(commands::mapvote::mapvote)
+               .batch_known_as(vec!["v", "mv"]))
   );
   client.start();
   client
