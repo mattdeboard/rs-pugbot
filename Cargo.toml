@@ -16,7 +16,9 @@ test = false
 [dependencies]
 bigdecimal = "*"
 diesel = { version = "*", features = ["chrono", "postgres", "serde_json", "huge-tables", "numeric", "uuid"] }
-diesel_cli = { features = ["postgres"] }
+# diesel_cli must be installed via the following command:
+# cargo install diesel_cli --no-default-features --features postgres
+# diesel_cli = { features = ["postgres"] }
 diesel_codegen = { version = "*", features = ["postgres"] }
 diesel_migrations = "*"
 env_logger = "~0.4"
