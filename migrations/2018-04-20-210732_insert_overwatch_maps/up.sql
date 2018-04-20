@@ -1,0 +1,18 @@
+insert into maps (game_title_id, map_name) values
+(1, 'Blizzard World'),
+(1, 'Hanamura'),
+(1, 'Horizon Lunar Colony'),
+(1, 'Junkertown'),
+(1, 'Ilios'),
+(1, 'Numbani'),
+(1, 'Nepal'),
+(1, 'Temple of Anubis'),
+(1, 'Kings Row'),
+(1, 'Volskaya Industries'),
+(1, 'Dorado'),
+(1, 'Route 66'),
+(1, 'Watchpoint: Gibraltar'),
+(1, 'Eichenwalde'),
+(1, 'Hollywood'),
+(1, 'Lijiang Tower'),
+(1, 'Oasis');
