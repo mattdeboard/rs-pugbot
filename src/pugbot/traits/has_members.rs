@@ -1,4 +1,4 @@
-use serenity::model::channel::{ Embed };
+use serenity::model::channel::Embed;
 use serenity::model::user::User;
 
 pub trait HasMembers {

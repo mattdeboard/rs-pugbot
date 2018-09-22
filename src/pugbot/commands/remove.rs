@@ -1,6 +1,6 @@
+use consume_message;
 use models::game::Game;
 use traits::has_members::HasMembers;
-use consume_message;
 
 command!(remove(ctx, msg) {
   let mut data = ctx.data.lock();

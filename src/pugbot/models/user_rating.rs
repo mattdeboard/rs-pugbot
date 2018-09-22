@@ -10,5 +10,5 @@ pub struct UserRating {
   pub rating: Option<BigDecimal>,
   pub deviation: Option<BigDecimal>,
   pub volatility: Option<BigDecimal>,
-  pub game_mode_id: i32
+  pub game_mode_id: i32,
 }

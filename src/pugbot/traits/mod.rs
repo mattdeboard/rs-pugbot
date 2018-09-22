@@ -1,3 +1,3 @@
 pub mod has_members;
-pub mod pool_availability;
 pub mod phased;
+pub mod pool_availability;

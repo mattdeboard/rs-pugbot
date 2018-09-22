@@ -1,8 +1,11 @@
 #![feature(const_fn, custom_attribute, plugin)]
 #![allow(unused_attributes)]
-#[macro_use] extern crate log;
-#[macro_use] extern crate serenity;
-#[macro_use] extern crate diesel;
+#[macro_use]
+extern crate log;
+#[macro_use]
+extern crate serenity;
+#[macro_use]
+extern crate diesel;
 
 extern crate bigdecimal;
 extern crate env_logger;
@@ -20,18 +23,18 @@ pub mod models;
 pub mod schema;
 pub mod traits;
 
-use glicko2::{ GameResult, Glicko2Rating, new_rating };
+use glicko2::{new_rating, GameResult, Glicko2Rating};
 use models::draft_pool::DraftPool;
-use models::game::{ Game, Outcome };
+use models::game::{Game, Outcome};
 use models::team::Team;
 use serenity::builder::CreateEmbed;
 use serenity::framework::StandardFramework;
-use serenity::model::channel::{ Embed, Message };
+use serenity::http;
+use serenity::model::channel::{Embed, Message};
 use serenity::model::event::ResumedEvent;
 use serenity::model::gateway::Ready;
 use serenity::model::id::UserId;
 use serenity::prelude::*;
-use serenity::http;
 use std::collections::HashSet;
 use std::convert::From;
 use std::env;
@@ -53,32 +56,37 @@ fn team_size() -> u32 {
   kankyo::load().expect("Failed to load .env file");
 
   match env::var("TEAM_SIZE") {
-    Ok(size) =>
+    Ok(size) => {
       if let Ok(s) = size.parse::<u32>() {
         s
       } else {
         panic!("Invalid value for `TEAM_COUNT`")
-      },
-    Err(_) => panic!("No 'TEAM_SIZE' env var found")
+      }
+    }
+    Err(_) => panic!("No 'TEAM_SIZE' env var found"),
   }
 }
 
 fn team_id_range() -> Range<usize> {
   let tc = team_count().unwrap();
-  Range { start: 1, end: (tc as usize) + 1 }
+  Range {
+    start: 1,
+    end: (tc as usize) + 1,
+  }
 }
 
 fn team_count() -> Option<u32> {
   kankyo::load().expect("Failed to load .env file");
 
   match env::var("TEAM_COUNT") {
-    Ok(size) =>
+    Ok(size) => {
       if let Ok(num_teams) = size.parse::<u32>() {
         Some(num_teams)
       } else {
         None
-      },
-    Err(_) => None
+      }
+    }
+    Err(_) => None,
   }
 }
 
@@ -95,8 +103,8 @@ fn queue_size() -> u32 {
 #[allow(unused_must_use)]
 pub fn client_setup() -> Client {
   env_logger::init().expect("Failed to initialize env_logger");
-  let token = env::var("DISCORD_TOKEN")
-    .expect("Expected a token in the environment");
+  let token =
+    env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
   let mut client = Client::new(&token, Handler).expect("Err creating client");
 
   {
@@ -112,28 +120,27 @@ pub fn client_setup() -> Client {
 
   client.with_framework(
     StandardFramework::new()
-      .configure(|c| c
-                 .owners(bot_owners())
-                 .prefix("~"))
-      .command("add", |c| c
-               .cmd(commands::add::add)
-               .batch_known_as(vec!["a"]))
-      .command("remove", |c| c
-               .cmd(commands::remove::remove)
-               .batch_known_as(vec!["r"]))
-      .command("pick", |c| c
-               .cmd(commands::pick::pick)
-               .batch_known_as(vec!["p"]))
-      .command("vote", |c| c
-               .cmd(commands::mapvote::mapvote)
-               .batch_known_as(vec!["v", "mv"]))
+      .configure(|c| c.owners(bot_owners()).prefix("~"))
+      .command("add", |c| {
+        c.cmd(commands::add::add).batch_known_as(vec!["a"])
+      }).command("remove", |c| {
+        c.cmd(commands::remove::remove).batch_known_as(vec!["r"])
+      }).command("pick", |c| {
+        c.cmd(commands::pick::pick).batch_known_as(vec!["p"])
+      }).command("vote", |c| {
+        c.cmd(commands::mapvote::mapvote)
+          .batch_known_as(vec!["v", "mv"])
+      }),
   );
   client.start();
   client
 }
 
 pub fn consume_message(msg: &Message, embed: Embed) {
-  msg.channel_id.send_message(|m| m.embed(|_| CreateEmbed::from(embed))).unwrap();
+  msg
+    .channel_id
+    .send_message(|m| m.embed(|_| CreateEmbed::from(embed)))
+    .unwrap();
 }
 
 fn bot_owners() -> HashSet<UserId> {
@@ -142,7 +149,7 @@ fn bot_owners() -> HashSet<UserId> {
       let mut set = HashSet::new();
       set.insert(info.owner.id);
       set
-    },
+    }
     Err(why) => panic!("Couldn't get application info: {:?}", why),
   }
 }
@@ -150,14 +157,15 @@ fn bot_owners() -> HashSet<UserId> {
 pub fn new_rating_from_outcome(
   original_rating: Glicko2Rating,
   opposing_team: Team,
-  outcome: Outcome
+  outcome: Outcome,
 ) -> Glicko2Rating {
-  let results: Vec<GameResult> = opposing_team.glicko2_ratings.into_iter().map(
-    |r| match outcome {
+  let results: Vec<GameResult> = opposing_team
+    .glicko2_ratings
+    .into_iter()
+    .map(|r| match outcome {
       Outcome::Win => GameResult::win(r),
       Outcome::Loss => GameResult::loss(r),
-      Outcome::Draw => GameResult::draw(r)
-    }
-  ).collect();
+      Outcome::Draw => GameResult::draw(r),
+    }).collect();
   new_rating(original_rating, &results, 0.3)
 }

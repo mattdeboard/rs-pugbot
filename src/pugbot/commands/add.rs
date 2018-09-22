@@ -1,12 +1,12 @@
-use serenity::model::channel::{ Message };
+use serenity::model::channel::Message;
 use serenity::model::user::User;
 
-use models::game::{ Game, Phases };
-use traits::has_members::HasMembers;
-use traits::pool_availability::PoolAvailability;
-use traits::phased::Phased;
 use consume_message;
+use models::game::{Game, Phases};
 use queue_size;
+use traits::has_members::HasMembers;
+use traits::phased::Phased;
+use traits::pool_availability::PoolAvailability;
 
 command!(add(ctx, msg) {
   {
@@ -17,7 +17,11 @@ command!(add(ctx, msg) {
   }
 });
 
-pub fn update_members(game: &mut Game, msg: &Message, send_embed: bool) -> Vec<User> {
+pub fn update_members(
+  game: &mut Game,
+  msg: &Message,
+  send_embed: bool,
+) -> Vec<User> {
   // The `send_embed` parameter exists only as a way to avoid trying to hit the Discord
   // API during testing.
   if game.phase != Some(Phases::PlayerRegistration) {
@@ -36,10 +40,11 @@ pub fn update_members(game: &mut Game, msg: &Message, send_embed: bool) -> Vec<U
   }
 
   let members = game.draft_pool.members();
-  if members.len() as u32 == queue_size() &&
-    game.phase == Some(Phases::PlayerRegistration) {
-      game.next_phase();
-    }
+  if members.len() as u32 == queue_size()
+    && game.phase == Some(Phases::PlayerRegistration)
+  {
+    game.next_phase();
+  }
 
   members
 }

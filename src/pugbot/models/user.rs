@@ -1,11 +1,11 @@
-use diesel::ExpressionMethods;
-use diesel::pg::Pg;
-use diesel::prelude::{ Insertable, Queryable };
 use diesel::dsl::Eq;
+use diesel::pg::Pg;
+use diesel::prelude::{Insertable, Queryable};
+use diesel::ExpressionMethods;
+use models::user_rating::UserRating;
 use schema::users;
 use serenity::model::id::UserId;
 use serenity::model::user::User;
-use models::user_rating::UserRating;
 
 #[derive(Debug)]
 pub struct DiscordUser {
@@ -14,7 +14,7 @@ pub struct DiscordUser {
   pub bot: bool,
   pub discriminator: u16,
   pub name: String,
-  pub avatar: Option<String>
+  pub avatar: Option<String>,
 }
 
 impl<'a> Insertable<users::table> for &'a User {
@@ -22,7 +22,7 @@ impl<'a> Insertable<users::table> for &'a User {
     Eq<users::bot, bool>,
     Eq<users::discriminator, i32>,
     Eq<users::name, &'a String>,
-    Eq<users::discord_user_id, i32>
+    Eq<users::discord_user_id, i32>,
   ) as Insertable<users::table>>::Values;
 
   fn values(self) -> Self::Values {
@@ -31,7 +31,8 @@ impl<'a> Insertable<users::table> for &'a User {
       users::discriminator.eq(self.discriminator as i32),
       users::name.eq(&self.name),
       users::discord_user_id.eq(self.id.0 as i32),
-    ).values()
+    )
+      .values()
   }
 }
 
@@ -42,7 +43,7 @@ impl From<DiscordUser> for User {
       bot: discord_user.bot,
       discriminator: discord_user.discriminator,
       name: discord_user.name,
-      avatar: discord_user.avatar
+      avatar: discord_user.avatar,
     }
   }
 }
@@ -70,7 +71,7 @@ impl From<DiscordUser> for UserRating {
       rating: None,
       deviation: None,
       volatility: None,
-      game_mode_id: 0
+      game_mode_id: 0,
     }
   }
 }

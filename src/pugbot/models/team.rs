@@ -1,20 +1,20 @@
 extern crate kankyo;
 
 use glicko2::Glicko2Rating;
-use serenity::model::channel::{ Embed, EmbedFooter };
+use serenity::model::channel::{Embed, EmbedFooter};
 use serenity::model::user::User;
 use serenity::utils::Colour;
 use std::clone::Clone;
 use typemap::Key;
 
-use ::traits::has_members::HasMembers;
+use traits::has_members::HasMembers;
 
 #[derive(Debug, Clone)]
 pub struct Team {
   pub id: usize,
   pub captain: Option<User>,
   pub members: Vec<User>,
-  pub glicko2_ratings: Vec<Glicko2Rating>
+  pub glicko2_ratings: Vec<Glicko2Rating>,
 }
 
 impl Key for Team {
@@ -22,7 +22,9 @@ impl Key for Team {
 }
 
 impl HasMembers for Team {
-  fn members(&self) -> Vec<User> { self.members.clone() }
+  fn members(&self) -> Vec<User> {
+    self.members.clone()
+  }
 
   fn add_member(&mut self, user: User) -> Option<Embed> {
     self.members.push(user);
@@ -47,9 +49,11 @@ impl HasMembers for Team {
         icon_url: None,
         proxy_icon_url: None,
         text: match self.captain {
-          Some(ref user) => format!("{} is Team {} Captain", user.name, self.id),
-          None => format!("Team {} has no captain, yet", self.id)
-        }
+          Some(ref user) => {
+            format!("{} is Team {} Captain", user.name, self.id)
+          }
+          None => format!("Team {} has no captain, yet", self.id),
+        },
       }),
       fields: Vec::new(),
       image: None,
@@ -57,9 +61,13 @@ impl HasMembers for Team {
       provider: None,
       thumbnail: None,
       timestamp: None,
-      title: Some(format!("Team {} has {} members:", self.id, self.members.len())),
+      title: Some(format!(
+        "Team {} has {} members:",
+        self.id,
+        self.members.len()
+      )),
       url: None,
-      video: None
+      video: None,
     })
   }
 }

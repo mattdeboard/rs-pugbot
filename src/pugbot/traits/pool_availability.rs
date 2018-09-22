@@ -1,5 +1,5 @@
-use traits::has_members::HasMembers;
 use serenity::model::channel::Embed;
+use traits::has_members::HasMembers;
 
 pub trait PoolAvailability: HasMembers {
   fn is_open(&self) -> bool;

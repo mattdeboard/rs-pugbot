@@ -1,9 +1,9 @@
-use models::game::{ Game, Phases };
-use traits::has_members::HasMembers;
-use traits::phased::Phased;
 use consume_message;
+use models::game::{Game, Phases};
 use queue_size;
 use team_count;
+use traits::has_members::HasMembers;
+use traits::phased::Phased;
 
 command!(pick(ctx, msg, args) {
   let user_index = args.single::<usize>().unwrap();

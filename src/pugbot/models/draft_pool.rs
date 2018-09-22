@@ -1,4 +1,4 @@
-use serenity::model::channel::{ Embed, EmbedFooter };
+use serenity::model::channel::{Embed, EmbedFooter};
 use serenity::model::user::User;
 use serenity::utils::Colour;
 use std::collections::HashMap;
@@ -10,14 +10,14 @@ use traits::pool_availability::*;
 
 pub struct DraftPool {
   pub members: Vec<User>,
-  pub available_players: HashMap<usize, User>
+  pub available_players: HashMap<usize, User>,
 }
 
 impl DraftPool {
   pub fn new(members: Vec<User>) -> DraftPool {
     DraftPool {
       members: members,
-      available_players: HashMap::new()
+      available_players: HashMap::new(),
     }
   }
 
@@ -31,7 +31,10 @@ impl DraftPool {
     }
   }
 
-  pub fn pop_available_player(&mut self, player_number: &usize) -> Option<User> {
+  pub fn pop_available_player(
+    &mut self,
+    player_number: &usize,
+  ) -> Option<User> {
     self.available_players.remove(player_number)
   }
 }
@@ -51,7 +54,7 @@ impl PoolAvailability for DraftPool {
       footer: Some(EmbedFooter {
         icon_url: None,
         proxy_icon_url: None,
-        text: format!("The queue is full! Now picking captains!")
+        text: format!("The queue is full! Now picking captains!"),
       }),
       fields: Vec::new(),
       image: None,
@@ -61,7 +64,7 @@ impl PoolAvailability for DraftPool {
       timestamp: None,
       title: Some("Members in queue:".to_string()),
       url: None,
-      video: None
+      video: None,
     })
   }
 }
@@ -98,7 +101,11 @@ impl HasMembers for DraftPool {
       footer: Some(EmbedFooter {
         icon_url: None,
         proxy_icon_url: None,
-        text: format!("{} of {} users in queue", self.members.len(), queue_size())
+        text: format!(
+          "{} of {} users in queue",
+          self.members.len(),
+          queue_size()
+        ),
       }),
       fields: Vec::new(),
       image: None,
@@ -108,7 +115,7 @@ impl HasMembers for DraftPool {
       timestamp: None,
       title: Some("Members in queue:".to_string()),
       url: None,
-      video: None
+      video: None,
     })
   }
 }

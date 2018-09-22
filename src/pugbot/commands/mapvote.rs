@@ -1,6 +1,6 @@
-use models::game::{ Game, Phases };
-use traits::phased::Phased;
 use consume_message;
+use models::game::{Game, Phases};
+use traits::phased::Phased;
 
 command!(mapvote(ctx, msg, args) {
   let mut data = ctx.data.lock();
