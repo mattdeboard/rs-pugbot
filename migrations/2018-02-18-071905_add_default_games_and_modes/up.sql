@@ -20,7 +20,7 @@ with rl_id as (
    where game_name = 'Rocket League'
 )
 insert into game_modes (game_title_id, mode_name, team_size) values
-  ((select id from ow_id), 'Standard 3v3', 3),
-  ((select id from ow_id), '2v2', 2)
-  ((select id from ow_id), '4v4', 4),
-  ((select id from ow_id), '1v1', 1);
+  ((select id from rl_id), 'Standard 3v3', 3),
+  ((select id from rl_id), '2v2', 2),
+  ((select id from rl_id), '4v4', 4),
+  ((select id from rl_id), '1v1', 1);
