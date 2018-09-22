@@ -101,7 +101,7 @@ fn queue_size() -> u32 {
 }
 
 #[allow(unused_must_use)]
-pub fn client_setup() -> Client {
+pub fn client_setup() {
   env_logger::init().expect("Failed to initialize env_logger");
   let token =
     env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
@@ -133,7 +133,6 @@ pub fn client_setup() -> Client {
       }),
   );
   client.start();
-  client
 }
 
 pub fn consume_message(msg: &Message, embed: Embed) {
