@@ -3,7 +3,6 @@
 #[macro_use] extern crate log;
 #[macro_use] extern crate serenity;
 #[macro_use] extern crate diesel;
-#[macro_use] extern crate diesel_codegen;
 
 extern crate bigdecimal;
 extern crate env_logger;
