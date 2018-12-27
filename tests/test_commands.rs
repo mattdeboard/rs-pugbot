@@ -15,14 +15,14 @@ use diesel::prelude::*;
 use diesel_migrations::run_pending_migrations;
 use pugbot::commands;
 use pugbot::db::init_pool;
-use pugbot::models::game::{ Game, Phases };
 use pugbot::models::draft_pool::DraftPool;
+use pugbot::models::game::{Game, Phases};
 use pugbot::traits::has_members::HasMembers;
 use pugbot::traits::phased::Phased;
 use r2d2_diesel::ConnectionManager;
 use serde::de::Deserialize;
 use serde_json::Value;
-use serenity::model::channel::{ Message };
+use serenity::model::channel::Message;
 use serenity::model::id::UserId;
 use serenity::model::user::User;
 use std::env;
@@ -31,12 +31,13 @@ use std::fs::File;
 use pugbot::db::*;
 
 macro_rules! p {
-  ($s:ident, $filename:expr) => ({
-    let f = File::open(concat!("./tests/resources/", $filename, ".json")).unwrap();
+  ($s:ident, $filename:expr) => {{
+    let f =
+      File::open(concat!("./tests/resources/", $filename, ".json")).unwrap();
     let v = serde_json::from_reader::<File, Value>(f).unwrap();
 
     $s::deserialize(v).unwrap()
-  })
+  }};
 }
 
 fn gen_test_user() -> User {
@@ -54,7 +55,8 @@ fn update_members() {
   let message = p!(Message, "message");
   let key = "TEAM_SIZE";
   env::set_var(key, "1");
-  let game = &mut Game::new(None, DraftPool::new(vec![gen_test_user()]), 1, Vec::new());
+  let game =
+    &mut Game::new(None, DraftPool::new(vec![gen_test_user()]), 1, Vec::new());
   assert_eq!(game.phase, Some(Phases::PlayerRegistration));
   let members = commands::add::update_members(game, &message, false);
   // There should be one member in the members vec to start with: our test user.
@@ -67,10 +69,14 @@ fn update_members() {
 #[test]
 fn select_captains() {
   let message = p!(Message, "message");
-  let game = &mut Game::new(None, DraftPool::new(vec![gen_test_user()]), 1, Vec::new());
+  let game =
+    &mut Game::new(None, DraftPool::new(vec![gen_test_user()]), 1, Vec::new());
   game.draft_pool.add_member(message.author);
   assert_eq!(game.phase, Some(Phases::PlayerRegistration));
-  assert_eq!(game.select_captains(), Err("We aren't picking captains, yet!"));
+  assert_eq!(
+    game.select_captains(),
+    Err("We aren't picking captains, yet!")
+  );
   game.next_phase();
   // Switching to Captain Selection should build the available_players HashMap.
   assert_eq!(game.draft_pool.available_players.len(), 2);
@@ -83,7 +89,9 @@ fn select_captains() {
 }
 
 pub fn connection() -> r2d2::PooledConnection<ConnectionManager<PgConnection>> {
-  let pool = init_pool(Some("postgres://pugbot:pugbot@localhost:5432/test_pugbot".to_string()));
+  let pool = init_pool(Some(
+    "postgres://pugbot:pugbot@localhost:5432/test_pugbot".to_string(),
+  ));
   let conn = pool.get().unwrap();
   conn.begin_test_transaction().unwrap();
   run_pending_migrations(&*conn);
@@ -92,5 +100,8 @@ pub fn connection() -> r2d2::PooledConnection<ConnectionManager<PgConnection>> {
 
 #[test]
 fn write_to_db() {
-  assert_eq!(create_user_and_ratings(connection(), 1 as i32, gen_test_user()), Ok(()));
+  assert_eq!(
+    create_user_and_ratings(connection(), 9 as i32, gen_test_user()),
+    Ok(())
+  );
 }
