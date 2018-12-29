@@ -284,9 +284,36 @@ mod tests {
   extern crate serde_json;
   extern crate serenity;
 
+  use self::serde::de::Deserialize;
+  use self::serde_json::Value;
+  use commands;
   use models::draft_pool::DraftPool;
   use models::game::Phased;
   use models::game::{Game, Phases};
+  use serenity::model::channel::Message;
+  use serenity::model::id::UserId;
+  use serenity::model::user::User;
+  use std::fs::File;
+
+  macro_rules! p {
+    ($s:ident, $filename:expr) => {{
+      let f =
+        File::open(concat!("./tests/resources/", $filename, ".json")).unwrap();
+      let v = serde_json::from_reader::<File, Value>(f).unwrap();
+
+      $s::deserialize(v).unwrap()
+    }};
+  }
+
+  fn gen_test_user() -> User {
+    User {
+      id: UserId(210),
+      avatar: Some("abc".to_string()),
+      bot: false,
+      discriminator: 1432,
+      name: "TestUser".to_string(),
+    }
+  }
 
   #[test]
   fn test_game_next_phase_empty_queue() {
@@ -311,5 +338,31 @@ mod tests {
     game.next_phase();
     // Invoking next_phase should return CaptainSelection since the draft pool/queue has filled
     assert_eq!(game.phase, Some(Phases::CaptainSelection));
+  }
+
+  #[test]
+  fn test_select_captains() {
+    let message = p!(Message, "message");
+    let game = &mut Game::new(
+      None,
+      DraftPool::new(vec![gen_test_user()]),
+      1,
+      Vec::new(),
+      // Draft pool max size: 2 (1 * 2)
+      1,
+      2,
+    );
+    // game.draft_pool.add_member(message.author);
+    assert_eq!(game.phase, Some(Phases::PlayerRegistration));
+    // Invoking update_members invoke the `next_phase` call, which should advance the phase.
+    commands::add::update_members(game, &message, false);
+    assert_eq!(game.phase, Some(Phases::CaptainSelection));
+    // Advancing to `CaptainSelection` should build the available_players HashMap.
+    assert_eq!(game.draft_pool.available_players.len(), 2);
+    assert_eq!(game.select_captains(), Ok(()));
+    // Selecting captains successfully should consume all the entries in available_players
+    assert_eq!(game.draft_pool.available_players.len(), 0);
+    // There should now be two teams built.
+    assert_eq!(game.teams.clone().unwrap().len(), 2);
   }
 }
