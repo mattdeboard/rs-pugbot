@@ -73,6 +73,8 @@ mod tests {
       DraftPool::new(vec![gen_test_user(Some(message.author.id))]),
       1,
       Vec::new(),
+      2,
+      6,
     );
     assert_eq!(game.phase, Some(Phases::PlayerRegistration));
     let members = commands::remove::remove_member(game, &message, false);
