@@ -16,8 +16,6 @@ pub fn remove_member(
   send_embed: bool,
 ) -> Vec<User> {
   let author = msg.author.clone();
-  println!("Author ID: {}", author.id);
-  println!("Member IDs: {}", game.draft_pool.members()[0].id);
   if let Some(embed) = game.draft_pool.remove_member(author) {
     if send_embed {
       consume_message(msg, embed)
