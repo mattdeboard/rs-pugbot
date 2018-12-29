@@ -96,7 +96,7 @@ mod tests {
     let members = commands::add::update_members(game, &message, false);
     // There should be one member in the members vec to start with: our test user.
     // `update_members` above should add an additional user, the author of the message (which is
-    // defined in ./resources/message.json).
+    // defined in src/tests/resources/message.json).
     assert_eq!(members.len(), 2);
     assert_eq!(game.phase, Some(Phases::PlayerRegistration));
   }
