@@ -1,4 +1,4 @@
-use schema::*;
+use crate::schema::*;
 
 #[primary_key(game_title_id, map_name)]
 #[table_name = "maps"]

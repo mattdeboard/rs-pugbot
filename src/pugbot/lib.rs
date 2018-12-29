@@ -24,9 +24,9 @@ pub mod schema;
 pub mod traits;
 
 use glicko2::{new_rating, GameResult, Glicko2Rating};
-use models::draft_pool::DraftPool;
-use models::game::{Game, Outcome};
-use models::team::Team;
+use crate::models::draft_pool::DraftPool;
+use crate::models::game::{Game, Outcome};
+use crate::models::team::Team;
 use serenity::builder::CreateEmbed;
 use serenity::framework::StandardFramework;
 use serenity::http;

@@ -7,7 +7,7 @@ use serenity::utils::Colour;
 use std::clone::Clone;
 use typemap::Key;
 
-use traits::has_members::HasMembers;
+use crate::traits::has_members::HasMembers;
 
 #[derive(Debug, Clone)]
 pub struct Team {

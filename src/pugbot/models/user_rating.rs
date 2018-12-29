@@ -1,5 +1,5 @@
 use bigdecimal::BigDecimal;
-use schema::*;
+use crate::schema::*;
 
 #[table_name = "user_ratings"]
 #[derive(Debug, Insertable, Queryable, Associations)]

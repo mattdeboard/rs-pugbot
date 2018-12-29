@@ -2,7 +2,7 @@ use diesel::dsl::Eq;
 use diesel::pg::Pg;
 use diesel::prelude::{Insertable, Queryable};
 use diesel::ExpressionMethods;
-use schema::*;
+use crate::schema::*;
 
 #[primary_key(game_title_id)]
 #[table_name = "game_titles"]

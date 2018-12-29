@@ -4,9 +4,9 @@ use serenity::utils::Colour;
 use std::collections::HashMap;
 use typemap::Key;
 
-use queue_size;
-use traits::has_members::HasMembers;
-use traits::pool_availability::*;
+use crate::queue_size;
+use crate::traits::has_members::HasMembers;
+use crate::traits::pool_availability::*;
 
 pub struct DraftPool {
   pub members: Vec<User>,

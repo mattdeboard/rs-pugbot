@@ -1,6 +1,6 @@
-use models::draft_pool::DraftPool;
-use models::map::Map as GameMap;
-use models::team::Team;
+use crate::models::draft_pool::DraftPool;
+use crate::models::map::Map as GameMap;
+use crate::models::team::Team;
 use rand::{thread_rng, Rng};
 use serenity::model::channel::Embed;
 use serenity::model::id::UserId;
@@ -8,9 +8,9 @@ use serenity::utils::Colour;
 use std::collections::HashMap;
 use std::iter::Cycle;
 use std::ops::Range;
-use team_id_range;
-use traits::has_members::HasMembers;
-use traits::phased::Phased;
+use crate::team_id_range;
+use crate::traits::has_members::HasMembers;
+use crate::traits::phased::Phased;
 use typemap::Key;
 
 pub struct Game {
@@ -286,10 +286,10 @@ mod tests {
 
   use self::serde::de::Deserialize;
   use self::serde_json::Value;
-  use commands;
-  use models::draft_pool::DraftPool;
-  use models::game::Phased;
-  use models::game::{Game, Phases};
+  use crate::commands;
+  use crate::models::draft_pool::DraftPool;
+  use crate::models::game::Phased;
+  use crate::models::game::{Game, Phases};
   use serenity::model::channel::Message;
   use serenity::model::id::UserId;
   use serenity::model::user::User;

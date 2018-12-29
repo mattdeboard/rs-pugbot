@@ -2,8 +2,8 @@ use diesel::dsl::Eq;
 use diesel::pg::Pg;
 use diesel::prelude::{Insertable, Queryable};
 use diesel::ExpressionMethods;
-use models::user_rating::UserRating;
-use schema::users;
+use crate::models::user_rating::UserRating;
+use crate::schema::users;
 use serenity::model::id::UserId;
 use serenity::model::user::User;
 

@@ -1,8 +1,8 @@
-use consume_message;
-use models::game::Game;
+use crate::consume_message;
+use crate::models::game::Game;
+use crate::traits::has_members::HasMembers;
 use serenity::model::channel::Message;
 use serenity::model::user::User;
-use traits::has_members::HasMembers;
 
 command!(remove(ctx, msg) {
   let mut data = ctx.data.lock();
@@ -34,9 +34,9 @@ mod tests {
 
   use self::serde::de::Deserialize;
   use self::serde_json::Value;
-  use commands;
-  use models::draft_pool::DraftPool;
-  use models::game::{Game, Phases};
+  use crate::commands;
+  use crate::models::draft_pool::DraftPool;
+  use crate::models::game::{Game, Phases};
   use serenity::model::channel::Message;
   use serenity::model::id::UserId;
   use serenity::model::user::User;
