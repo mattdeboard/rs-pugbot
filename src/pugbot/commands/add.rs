@@ -40,12 +40,10 @@ pub fn update_members(
 
 #[cfg(test)]
 mod tests {
-  extern crate kankyo;
-  extern crate r2d2;
-  extern crate r2d2_diesel;
-  extern crate serde;
-  extern crate serde_json;
-  extern crate serenity;
+
+  use serde;
+  use serde_json;
+  use serenity;
 
   use self::serde::de::Deserialize;
   use self::serde_json::Value;

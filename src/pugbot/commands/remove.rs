@@ -28,9 +28,9 @@ pub fn remove_member(
 
 #[cfg(test)]
 mod tests {
-  extern crate serde;
-  extern crate serde_json;
-  extern crate serenity;
+  use serde;
+  use serde_json;
+  use serenity;
 
   use self::serde::de::Deserialize;
   use self::serde_json::Value;
