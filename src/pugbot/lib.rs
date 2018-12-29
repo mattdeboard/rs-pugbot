@@ -68,36 +68,29 @@ fn team_size() -> u32 {
 }
 
 fn team_id_range() -> Range<usize> {
-  let tc = team_count().unwrap();
+  let tc = team_count();
   Range {
     start: 1,
     end: (tc as usize) + 1,
   }
 }
 
-fn team_count() -> Option<u32> {
+fn team_count() -> u32 {
   kankyo::load().expect("Failed to load .env file");
 
-  match env::var("TEAM_COUNT") {
-    Ok(size) => {
-      if let Ok(num_teams) = size.parse::<u32>() {
-        Some(num_teams)
-      } else {
-        None
-      }
-    }
-    Err(_) => None,
+  if let Ok(num_teams) = kankyo::key("TEAM_COUNT")
+    .expect("Invalid value for `TEAM_COUNT`")
+    .parse::<u32>()
+  {
+    num_teams
+  } else {
+    2
   }
 }
 
 fn queue_size() -> u32 {
   kankyo::load().expect("Failed to load .env file");
-
-  if let Some(tc) = team_count() {
-    tc * team_size()
-  } else {
-    panic!("Invalid value for TEAM_COUNT");
-  }
+  team_count() * team_size()
 }
 
 #[allow(unused_must_use)]
@@ -113,7 +106,8 @@ pub fn client_setup() {
     let db_pool = db::init_pool(None);
     let conn = db_pool.get().unwrap();
     let map_choices = db::select_maps_for_mode_id(conn, 1);
-    let game = Game::new(None, draft_pool, 5, map_choices);
+    let game =
+      Game::new(None, draft_pool, 5, map_choices, team_count(), team_size());
     data.insert::<Game>(game);
     data.insert::<db::Pool>(db_pool);
   }
@@ -123,11 +117,14 @@ pub fn client_setup() {
       .configure(|c| c.owners(bot_owners()).prefix("~"))
       .command("add", |c| {
         c.cmd(commands::add::add).batch_known_as(vec!["a"])
-      }).command("remove", |c| {
+      })
+      .command("remove", |c| {
         c.cmd(commands::remove::remove).batch_known_as(vec!["r"])
-      }).command("pick", |c| {
+      })
+      .command("pick", |c| {
         c.cmd(commands::pick::pick).batch_known_as(vec!["p"])
-      }).command("vote", |c| {
+      })
+      .command("vote", |c| {
         c.cmd(commands::mapvote::mapvote)
           .batch_known_as(vec!["v", "mv"])
       }),
@@ -165,6 +162,7 @@ pub fn new_rating_from_outcome(
       Outcome::Win => GameResult::win(r),
       Outcome::Loss => GameResult::loss(r),
       Outcome::Draw => GameResult::draw(r),
-    }).collect();
+    })
+    .collect();
   new_rating(original_rating, &results, 0.3)
 }

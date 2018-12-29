@@ -3,18 +3,14 @@ use serenity::model::user::User;
 
 use consume_message;
 use models::game::{Game, Phases};
-use queue_size;
 use traits::has_members::HasMembers;
 use traits::phased::Phased;
 use traits::pool_availability::PoolAvailability;
 
 command!(add(ctx, msg) {
-  {
-    let mut data = ctx.data.lock();
-    let game = data.get_mut::<Game>().unwrap();
-
-    update_members(game, msg, true);
-  }
+  let mut data = ctx.data.lock();
+  let game = data.get_mut::<Game>().unwrap();
+  update_members(game, msg, true);
 });
 
 pub fn update_members(
@@ -38,13 +34,6 @@ pub fn update_members(
       }
     }
   }
-
-  let members = game.draft_pool.members();
-  if members.len() as u32 == queue_size()
-    && game.phase == Some(Phases::PlayerRegistration)
-  {
-    game.next_phase();
-  }
-
-  members
+  game.next_phase();
+  game.draft_pool.members()
 }

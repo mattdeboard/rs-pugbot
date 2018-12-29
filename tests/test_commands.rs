@@ -17,8 +17,6 @@ use pugbot::commands;
 use pugbot::db::init_pool;
 use pugbot::models::draft_pool::DraftPool;
 use pugbot::models::game::{Game, Phases};
-use pugbot::traits::has_members::HasMembers;
-use pugbot::traits::phased::Phased;
 use r2d2_diesel::ConnectionManager;
 use serde::de::Deserialize;
 use serde_json::Value;
@@ -55,32 +53,43 @@ fn update_members() {
   let message = p!(Message, "message");
   let key = "TEAM_SIZE";
   env::set_var(key, "1");
-  let game =
-    &mut Game::new(None, DraftPool::new(vec![gen_test_user()]), 1, Vec::new());
+  let game = &mut Game::new(
+    None,
+    DraftPool::new(vec![gen_test_user()]),
+    1,
+    Vec::new(),
+    // Draft pool max size: 12 (2 * 6)
+    2,
+    6,
+  );
   assert_eq!(game.phase, Some(Phases::PlayerRegistration));
   let members = commands::add::update_members(game, &message, false);
   // There should be one member in the members vec to start with: our test user.
   // `update_members` above should add an additional user, the author of the message (which is
   // defined in ./resources/message.json).
   assert_eq!(members.len(), 2);
-  assert_eq!(game.phase, Some(Phases::CaptainSelection));
+  assert_eq!(game.phase, Some(Phases::PlayerRegistration));
 }
 
 #[test]
 fn select_captains() {
   let message = p!(Message, "message");
-  let game =
-    &mut Game::new(None, DraftPool::new(vec![gen_test_user()]), 1, Vec::new());
-  game.draft_pool.add_member(message.author);
-  assert_eq!(game.phase, Some(Phases::PlayerRegistration));
-  assert_eq!(
-    game.select_captains(),
-    Err("We aren't picking captains, yet!")
+  let game = &mut Game::new(
+    None,
+    DraftPool::new(vec![gen_test_user()]),
+    1,
+    Vec::new(),
+    // Draft pool max size: 2 (1 * 2)
+    1,
+    2,
   );
-  game.next_phase();
-  // Switching to Captain Selection should build the available_players HashMap.
-  assert_eq!(game.draft_pool.available_players.len(), 2);
+  // game.draft_pool.add_member(message.author);
+  assert_eq!(game.phase, Some(Phases::PlayerRegistration));
+  // Invoking update_members invoke the `next_phase` call, which should advance the phase.
+  commands::add::update_members(game, &message, false);
   assert_eq!(game.phase, Some(Phases::CaptainSelection));
+  // Advancing to `CaptainSelection` should build the available_players HashMap.
+  assert_eq!(game.draft_pool.available_players.len(), 2);
   assert_eq!(game.select_captains(), Ok(()));
   // Selecting captains successfully should consume all the entries in available_players
   assert_eq!(game.draft_pool.available_players.len(), 0);

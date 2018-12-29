@@ -17,7 +17,7 @@ command!(pick(ctx, msg, args) {
   let user = game.draft_pool.pop_available_player(&user_index).unwrap();
   game.next_team_to_draft().add_member(user);
 
-  let max_turns: u32 = queue_size() - team_count().unwrap();
+  let max_turns: u32 = queue_size() - team_count();
 
   if game.turn_number == max_turns as usize {
     game.next_phase();
@@ -26,5 +26,4 @@ command!(pick(ctx, msg, args) {
   } else {
     game.turn_number += 1;
   }
-
 });

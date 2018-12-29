@@ -9,6 +9,7 @@ use std::collections::HashMap;
 use std::iter::Cycle;
 use std::ops::Range;
 use team_id_range;
+use traits::has_members::HasMembers;
 use traits::phased::Phased;
 use typemap::Key;
 
@@ -20,6 +21,8 @@ pub struct Game {
   pub draft_pool: DraftPool,
   pub game_mode_id: i32,
   pub phase: Option<Phases>,
+  pub team_count: u32,
+  pub team_size: u32,
   pub teams: Option<Vec<Team>>,
   pub turn_number: usize,
   pub turn_taker: Cycle<Range<usize>>,
@@ -47,6 +50,8 @@ impl Game {
     draft_pool: DraftPool,
     mode_id: i32,
     map_choices: Vec<GameMap>,
+    team_count: u32,
+    team_size: u32,
   ) -> Game {
     let members = draft_pool.members.clone();
 
@@ -62,6 +67,8 @@ impl Game {
         .collect(),
       phase: Some(Phases::PlayerRegistration),
       teams: teams,
+      team_count: team_count,
+      team_size: team_size,
       turn_number: 1,
       turn_taker: team_id_range().cycle(),
     }
@@ -103,7 +110,8 @@ impl Game {
         } else {
           None
         }
-      }).filter(|t| t.is_some())
+      })
+      .filter(|t| t.is_some())
       .map(|t| t.unwrap())
       .collect();
 
@@ -127,7 +135,8 @@ impl Game {
         let member_names: Vec<String> =
           team.members.iter().map(|user| user.clone().name).collect();
         format!("Team {} roster:\n{}", team.id, member_names.join("\n"))
-      }).collect();
+      })
+      .collect();
 
     if self.phase == Some(Phases::PlayerDrafting) {
       self.next_phase();
@@ -205,9 +214,23 @@ impl Phased for Game {
   fn next_phase(&mut self) {
     self.phase = match self.phase {
       Some(Phases::PlayerRegistration) => {
-        self.draft_pool.generate_available_players();
-        self.draft_pool.members = Vec::new();
-        Some(Phases::CaptainSelection)
+        // If the draft pool is full, move to the next phase.
+        // Draft pool is full if the number of users in the pool equals the max configured size of
+        // the pool. Max size of the draft pool is expressed as `team_count * team_size`.
+
+        // If the draft pool is NOT full, do not advance to the next phase. "Not advancing to the
+        // next phase" is equivalent to returning `Phases::PlayerRegistration` as the phase.
+        if self.draft_pool.members().len() as u32
+          == self.team_count * self.team_size
+        {
+          self.draft_pool.generate_available_players();
+          // Reset draft pool membership to an empty Vec. The pool of players available for drafting
+          //  (`available_players`) is distinct from the pool of registered players (`members`).
+          self.draft_pool.members = Vec::new();
+          Some(Phases::CaptainSelection)
+        } else {
+          Some(Phases::PlayerRegistration)
+        }
       }
       Some(Phases::CaptainSelection) => Some(Phases::PlayerDrafting),
       Some(Phases::PlayerDrafting) => {
@@ -252,4 +275,41 @@ impl Phased for Game {
 
 impl Key for Game {
   type Value = Game;
+}
+
+#[cfg(test)]
+mod tests {
+  extern crate kankyo;
+  extern crate serde;
+  extern crate serde_json;
+  extern crate serenity;
+
+  use models::draft_pool::DraftPool;
+  use models::game::Phased;
+  use models::game::{Game, Phases};
+
+  #[test]
+  fn test_game_next_phase_empty_queue() {
+    // Test what should happen when next_phase is called in PlayerRegistration phase and there is
+    // still room in the queue.
+    let game =
+      &mut Game::new(None, DraftPool::new(vec![]), 1, Vec::new(), 2, 6);
+    assert_eq!(game.phase, Some(Phases::PlayerRegistration));
+    game.next_phase();
+    // Invoking next_phase should just keep returning PlayerRegistration since there is still
+    // room in the queue.
+    assert_eq!(game.phase, Some(Phases::PlayerRegistration));
+  }
+
+  #[test]
+  fn test_game_next_phase_full_queue() {
+    // Test what should happen when next_phase is called in PlayerRegistration phase and the queue
+    // is full.
+    let game =
+      &mut Game::new(None, DraftPool::new(vec![]), 1, Vec::new(), 0, 0);
+    assert_eq!(game.phase, Some(Phases::PlayerRegistration));
+    game.next_phase();
+    // Invoking next_phase should return CaptainSelection since the draft pool/queue has filled
+    assert_eq!(game.phase, Some(Phases::CaptainSelection));
+  }
 }
