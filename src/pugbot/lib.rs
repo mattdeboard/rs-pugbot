@@ -7,15 +7,8 @@ extern crate serenity;
 #[macro_use]
 extern crate diesel;
 
-extern crate bigdecimal;
-extern crate env_logger;
-extern crate glicko2;
-extern crate kankyo;
-extern crate num;
-extern crate r2d2;
-extern crate r2d2_diesel;
-extern crate rand;
-extern crate typemap;
+use env_logger;
+use kankyo;
 
 pub mod commands;
 pub mod db;
@@ -23,10 +16,10 @@ pub mod models;
 pub mod schema;
 pub mod traits;
 
-use glicko2::{new_rating, GameResult, Glicko2Rating};
 use crate::models::draft_pool::DraftPool;
 use crate::models::game::{Game, Outcome};
 use crate::models::team::Team;
+use glicko2::{new_rating, GameResult, Glicko2Rating};
 use serenity::builder::CreateEmbed;
 use serenity::framework::StandardFramework;
 use serenity::http;

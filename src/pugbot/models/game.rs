@@ -1,6 +1,9 @@
 use crate::models::draft_pool::DraftPool;
 use crate::models::map::Map as GameMap;
 use crate::models::team::Team;
+use crate::team_id_range;
+use crate::traits::has_members::HasMembers;
+use crate::traits::phased::Phased;
 use rand::{thread_rng, Rng};
 use serenity::model::channel::Embed;
 use serenity::model::id::UserId;
@@ -8,9 +11,6 @@ use serenity::utils::Colour;
 use std::collections::HashMap;
 use std::iter::Cycle;
 use std::ops::Range;
-use crate::team_id_range;
-use crate::traits::has_members::HasMembers;
-use crate::traits::phased::Phased;
 use typemap::Key;
 
 pub struct Game {
@@ -279,10 +279,10 @@ impl Key for Game {
 
 #[cfg(test)]
 mod tests {
-  extern crate kankyo;
-  extern crate serde;
-  extern crate serde_json;
-  extern crate serenity;
+
+  use serde;
+  use serde_json;
+  use serenity;
 
   use self::serde::de::Deserialize;
   use self::serde_json::Value;

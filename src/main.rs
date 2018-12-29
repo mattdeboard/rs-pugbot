@@ -1,5 +1,5 @@
-extern crate kankyo;
-extern crate pugbot;
+use kankyo;
+use pugbot;
 
 fn main() {
   // This will load the environment variables located at `./.env`, relative to
