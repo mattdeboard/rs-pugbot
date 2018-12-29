@@ -3,6 +3,7 @@ name = "pugbot"
 version = "0.1.0"
 authors = ["Matt DeBoard <mdeboard@truecar.com>"]
 features = [ "const_fn" ]
+edition = "2018"
 
 [lib]
 name = "pugbot"
