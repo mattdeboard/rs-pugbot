@@ -1,5 +1,3 @@
-extern crate kankyo;
-
 use glicko2::Glicko2Rating;
 use serenity::model::channel::{Embed, EmbedFooter};
 use serenity::model::user::User;
