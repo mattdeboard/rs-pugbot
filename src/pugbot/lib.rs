@@ -6,6 +6,8 @@ extern crate log;
 extern crate serenity;
 #[macro_use]
 extern crate diesel;
+#[macro_use]
+extern crate serde_derive;
 
 use env_logger;
 use kankyo;
@@ -17,9 +19,9 @@ pub mod schema;
 pub mod traits;
 
 use crate::models::draft_pool::DraftPool;
-use crate::models::game::{Game, Outcome};
+use crate::models::game::Game;
 use crate::models::team::Team;
-use glicko2::{new_rating, GameResult, Glicko2Rating};
+// use glicko2::{new_rating, GameResult, Glicko2Rating};
 use serenity::builder::CreateEmbed;
 use serenity::framework::StandardFramework;
 use serenity::http;
@@ -60,7 +62,7 @@ fn team_size() -> u32 {
   }
 }
 
-fn team_id_range() -> Range<usize> {
+pub fn team_id_range() -> Range<usize> {
   let tc = team_count();
   Range {
     start: 1,
@@ -143,19 +145,19 @@ fn bot_owners() -> HashSet<UserId> {
   }
 }
 
-pub fn new_rating_from_outcome(
-  original_rating: Glicko2Rating,
-  opposing_team: Team,
-  outcome: Outcome,
-) -> Glicko2Rating {
-  let results: Vec<GameResult> = opposing_team
-    .glicko2_ratings
-    .into_iter()
-    .map(|r| match outcome {
-      Outcome::Win => GameResult::win(r),
-      Outcome::Loss => GameResult::loss(r),
-      Outcome::Draw => GameResult::draw(r),
-    })
-    .collect();
-  new_rating(original_rating, &results, 0.3)
-}
+// pub fn new_rating_from_outcome(
+//   original_rating: Glicko2Rating,
+//   opposing_team: Team,
+//   outcome: Outcome,
+// ) -> Glicko2Rating {
+//   let results: Vec<GameResult> = opposing_team
+//     .glicko2_ratings
+//     .into_iter()
+//     .map(|r| match outcome {
+//       Outcome::Win => GameResult::win(r),
+//       Outcome::Loss => GameResult::loss(r),
+//       Outcome::Draw => GameResult::draw(r),
+//     })
+//     .collect();
+//   new_rating(original_rating, &results, 0.3)
+// }
