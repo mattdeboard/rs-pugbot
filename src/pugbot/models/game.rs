@@ -105,7 +105,7 @@ impl Game {
             id: i,
             captain: Some(user.clone()),
             members: vec![user],
-            glicko2_ratings: vec![],
+            // glicko2_ratings: vec![],
           })
         } else {
           None
@@ -288,8 +288,8 @@ mod tests {
   use self::serde_json::Value;
   use crate::commands;
   use crate::models::draft_pool::DraftPool;
-  use crate::models::game::Phased;
-  use crate::models::game::{Game, Phases};
+  use crate::models::game::{team_id_range, Game, Phased, Phases};
+  use crate::team_count;
   use crate::traits::has_members::HasMembers;
   use serenity::model::channel::Message;
   use serenity::model::id::UserId;
@@ -368,13 +368,21 @@ mod tests {
 
   #[test]
   fn test_end_player_selection() {
+    let message = p!(Message, "message");
     let authors: Vec<User> = p!(Vec, "authors");
     // Choosing 2 teams of 5 here since there are 10 authors in authors.json
     let game =
       &mut Game::new(None, DraftPool::new(authors), 1, Vec::new(), 2, 5);
+    assert_eq!(team_count(), 2);
     assert_eq!(game.phase, Some(Phases::PlayerRegistration));
     game.next_phase();
     assert_eq!(game.phase, Some(Phases::CaptainSelection));
     assert_eq!(game.select_captains(), Ok(()));
+    assert_eq!(game.phase, Some(Phases::PlayerDrafting));
+
+    if let Some(ref teams) = game.teams {
+      println!("{:?}", serde_json::to_string(teams).unwrap());
+      assert_eq!(teams.len(), 2);
+    }
   }
 }
