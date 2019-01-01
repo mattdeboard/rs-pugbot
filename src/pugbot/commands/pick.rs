@@ -4,14 +4,23 @@ use crate::queue_size;
 use crate::team_count;
 use crate::traits::has_members::HasMembers;
 use crate::traits::phased::Phased;
+use serenity::model::channel::Message;
 
 command!(pick(ctx, msg, args) {
   let user_index = args.single::<usize>().unwrap();
   let mut data = ctx.data.lock();
   let game = data.get_mut::<Game>().unwrap();
+  draft_player(game, msg, true, user_index);
+});
 
+pub fn draft_player(
+  game: &mut Game,
+  msg: &Message,
+  send_embed: bool,
+  user_index: usize,
+) {
   if game.phase != Some(Phases::PlayerDrafting) {
-    return panic!("We're not drafting right now!");
+    panic!("We're not drafting right now!");
   }
 
   let user = game.draft_pool.pop_available_player(&user_index).unwrap();
@@ -26,4 +35,4 @@ command!(pick(ctx, msg, args) {
   } else {
     game.turn_number += 1;
   }
-});
+}
