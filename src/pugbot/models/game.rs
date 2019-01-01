@@ -70,7 +70,7 @@ impl Game {
       team_count: team_count,
       team_size: team_size,
       turn_number: 1,
-      turn_taker: team_id_range().cycle(),
+      turn_taker: team_id_range(team_count).cycle(),
     }
   }
 
@@ -94,12 +94,12 @@ impl Game {
     }
 
     let mut rng = thread_rng();
-    let teams: Vec<Team> = team_id_range()
+    let teams: Vec<Team> = team_id_range(self.team_count)
       .map(|i| {
         let pool = self.draft_pool.available_players.clone();
         let keys: Vec<&usize> = pool.keys().collect();
         let random_key: &usize = rng.choose(&[keys]).unwrap().first().unwrap();
-
+        println!("{:?}", random_key);
         if let Some(user) = self.draft_pool.pop_available_player(random_key) {
           Some(Team {
             id: i,
@@ -117,7 +117,13 @@ impl Game {
 
     self.teams = Some(teams.clone());
     self.next_phase();
-    Ok(())
+
+    if let Some(teams) = &self.teams {
+      if teams.len() as u32 == self.team_count {
+        return Ok(());
+      }
+    }
+    Err("Team creation failed unexpectedly")
   }
 
   pub fn drafting_complete_embed(
@@ -235,7 +241,7 @@ impl Phased for Game {
       Some(Phases::CaptainSelection) => Some(Phases::PlayerDrafting),
       Some(Phases::PlayerDrafting) => {
         self.turn_number = 1;
-        self.turn_taker = team_id_range().cycle();
+        self.turn_taker = team_id_range(self.team_count).cycle();
         Some(Phases::MapSelection)
       }
       Some(Phases::MapSelection) => {
@@ -286,11 +292,9 @@ mod tests {
 
   use self::serde::de::Deserialize;
   use self::serde_json::Value;
-  use crate::commands;
   use crate::models::draft_pool::DraftPool;
-  use crate::models::game::{team_id_range, Game, Phased, Phases};
-  use crate::team_count;
-  use crate::traits::has_members::HasMembers;
+  use crate::models::game::{Game, Phased, Phases};
+  use crate::{commands, team_id_range};
   use serenity::model::channel::Message;
   use serenity::model::id::UserId;
   use serenity::model::user::User;
@@ -353,7 +357,6 @@ mod tests {
       1,
       2,
     );
-    // game.draft_pool.add_member(message.author);
     assert_eq!(game.phase, Some(Phases::PlayerRegistration));
     // Invoking update_members invoke the `next_phase` call, which should advance the phase.
     commands::add::update_members(game, &message, false);
@@ -367,22 +370,27 @@ mod tests {
   }
 
   #[test]
-  fn test_end_player_selection() {
-    let message = p!(Message, "message");
+  fn test_team_creation() {
     let authors: Vec<User> = p!(Vec, "authors");
     // Choosing 2 teams of 5 here since there are 10 authors in authors.json
     let game =
       &mut Game::new(None, DraftPool::new(authors), 1, Vec::new(), 2, 5);
-    assert_eq!(team_count(), 2);
+
     assert_eq!(game.phase, Some(Phases::PlayerRegistration));
     game.next_phase();
     assert_eq!(game.phase, Some(Phases::CaptainSelection));
     assert_eq!(game.select_captains(), Ok(()));
-    assert_eq!(game.phase, Some(Phases::PlayerDrafting));
 
     if let Some(ref teams) = game.teams {
-      println!("{:?}", serde_json::to_string(teams).unwrap());
-      assert_eq!(teams.len(), 2);
+      assert_eq!(
+        teams.len() as u32,
+        game.team_count,
+        "There were supposed to be {:?} teams but there are only {:?}",
+        game.team_count,
+        teams.len()
+      );
     }
+
+    assert_eq!(game.phase, Some(Phases::PlayerDrafting));
   }
 }

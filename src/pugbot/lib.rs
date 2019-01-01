@@ -20,7 +20,7 @@ pub mod traits;
 
 use crate::models::draft_pool::DraftPool;
 use crate::models::game::Game;
-use crate::models::team::Team;
+// use crate::models::team::Team;
 // use glicko2::{new_rating, GameResult, Glicko2Rating};
 use serenity::builder::CreateEmbed;
 use serenity::framework::StandardFramework;
@@ -62,11 +62,10 @@ fn team_size() -> u32 {
   }
 }
 
-pub fn team_id_range() -> Range<usize> {
-  let tc = team_count();
+pub fn team_id_range(team_count: u32) -> Range<usize> {
   Range {
     start: 1,
-    end: (tc as usize) + 1,
+    end: team_count as usize + 1,
   }
 }
 
