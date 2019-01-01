@@ -290,6 +290,7 @@ mod tests {
   use crate::models::draft_pool::DraftPool;
   use crate::models::game::Phased;
   use crate::models::game::{Game, Phases};
+  use crate::traits::has_members::HasMembers;
   use serenity::model::channel::Message;
   use serenity::model::id::UserId;
   use serenity::model::user::User;
@@ -360,9 +361,20 @@ mod tests {
     // Advancing to `CaptainSelection` should build the available_players HashMap.
     assert_eq!(game.draft_pool.available_players.len(), 2);
     assert_eq!(game.select_captains(), Ok(()));
-    // Selecting captains successfully should consume all the entries in available_players
-    assert_eq!(game.draft_pool.available_players.len(), 0);
-    // There should now be two teams built.
-    assert_eq!(game.teams.clone().unwrap().len(), 2);
+    // There should now be one team built, with only one team member, leaving one available player.
+    assert_eq!(game.draft_pool.available_players.len(), 1);
+    assert_eq!(game.teams.clone().unwrap().len(), 1);
+  }
+
+  #[test]
+  fn test_end_player_selection() {
+    let authors: Vec<User> = p!(Vec, "authors");
+    // Choosing 2 teams of 5 here since there are 10 authors in authors.json
+    let game =
+      &mut Game::new(None, DraftPool::new(authors), 1, Vec::new(), 2, 5);
+    assert_eq!(game.phase, Some(Phases::PlayerRegistration));
+    game.next_phase();
+    assert_eq!(game.phase, Some(Phases::CaptainSelection));
+    assert_eq!(game.select_captains(), Ok(()));
   }
 }
