@@ -325,7 +325,7 @@ mod tests {
     // Test what should happen when next_phase is called in PlayerRegistration phase and there is
     // still room in the queue.
     let game =
-      &mut Game::new(None, DraftPool::new(vec![]), 1, Vec::new(), 2, 6);
+      &mut Game::new(None, DraftPool::new(vec![], 12), 1, Vec::new(), 2, 6);
     assert_eq!(game.phase, Some(Phases::PlayerRegistration));
     game.next_phase();
     // Invoking next_phase should just keep returning PlayerRegistration since there is still
@@ -338,7 +338,7 @@ mod tests {
     // Test what should happen when next_phase is called in PlayerRegistration phase and the queue
     // is full.
     let game =
-      &mut Game::new(None, DraftPool::new(vec![]), 1, Vec::new(), 0, 0);
+      &mut Game::new(None, DraftPool::new(vec![], 0), 1, Vec::new(), 0, 0);
     assert_eq!(game.phase, Some(Phases::PlayerRegistration));
     game.next_phase();
     // Invoking next_phase should return CaptainSelection since the draft pool/queue has filled
@@ -350,7 +350,7 @@ mod tests {
     let message = p!(Message, "message");
     let game = &mut Game::new(
       None,
-      DraftPool::new(vec![gen_test_user()]),
+      DraftPool::new(vec![gen_test_user()], 2),
       1,
       Vec::new(),
       // Draft pool max size: 2 (1 * 2)
@@ -374,7 +374,7 @@ mod tests {
     let authors: Vec<User> = p!(Vec, "authors");
     // Choosing 2 teams of 5 here since there are 10 authors in authors.json
     let game =
-      &mut Game::new(None, DraftPool::new(authors), 1, Vec::new(), 2, 5);
+      &mut Game::new(None, DraftPool::new(authors, 10), 1, Vec::new(), 2, 5);
 
     assert_eq!(game.phase, Some(Phases::PlayerRegistration));
     game.next_phase();

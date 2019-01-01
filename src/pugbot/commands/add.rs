@@ -83,7 +83,7 @@ mod tests {
     env::set_var(key, "1");
     let game = &mut Game::new(
       None,
-      DraftPool::new(vec![gen_test_user()]),
+      DraftPool::new(vec![gen_test_user()], 12),
       1,
       Vec::new(),
       // Draft pool max size: 12 (2 * 6)

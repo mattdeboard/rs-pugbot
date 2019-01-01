@@ -96,7 +96,7 @@ pub fn client_setup() {
 
   {
     let mut data = client.data.lock();
-    let draft_pool = DraftPool::new(Vec::new());
+    let draft_pool = DraftPool::new(Vec::new(), team_count() * team_size());
     let db_pool = db::init_pool(None);
     let conn = db_pool.get().unwrap();
     let map_choices = db::select_maps_for_mode_id(conn, 1);

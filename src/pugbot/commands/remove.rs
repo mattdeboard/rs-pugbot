@@ -68,7 +68,7 @@ mod tests {
     let message = p!(Message, "message");
     let game = &mut Game::new(
       None,
-      DraftPool::new(vec![gen_test_user(Some(message.author.id))]),
+      DraftPool::new(vec![gen_test_user(Some(message.author.id))], 12),
       1,
       Vec::new(),
       2,
