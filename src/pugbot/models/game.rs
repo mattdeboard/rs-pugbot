@@ -366,8 +366,15 @@ mod tests {
   fn test_team_creation() {
     let authors: Vec<User> = p!(Vec, "authors");
     // Choosing 2 teams of 5 here since there are 10 authors in authors.json
-    let game =
-      &mut Game::new(vec![], DraftPool::new(authors, 10), 1, Vec::new(), 2, 5);
+    let (team_count, team_size) = (2, (authors.len() / 2) as u32);
+    let game = &mut Game::new(
+      vec![],
+      DraftPool::new(authors, team_count * team_size),
+      1,
+      Vec::new(),
+      team_count,
+      team_size,
+    );
 
     assert_eq!(game.phase, Some(Phases::PlayerRegistration));
     game.next_phase();
