@@ -287,10 +287,9 @@ mod tests {
 
   use self::serde::de::Deserialize;
   use self::serde_json::Value;
+  use crate::commands;
   use crate::models::draft_pool::DraftPool;
   use crate::models::game::{Game, Phased, Phases};
-  use crate::{commands, team_id_range};
-  use rand::{thread_rng, Rng};
   use serenity::model::channel::Message;
   use serenity::model::id::UserId;
   use serenity::model::user::User;
@@ -317,9 +316,9 @@ mod tests {
   }
 
   #[test]
+  /// Test what should happen when next_phase is called in PlayerRegistration
+  /// phase and there is still room in the queue.
   fn test_game_next_phase_empty_queue() {
-    // Test what should happen when next_phase is called in PlayerRegistration
-    // phase and there is still room in the queue.
     let game =
       &mut Game::new(vec![], DraftPool::new(vec![], 12), 1, Vec::new(), 2, 6);
     assert_eq!(game.phase, Some(Phases::PlayerRegistration));
@@ -330,9 +329,9 @@ mod tests {
   }
 
   #[test]
+  /// Test what should happen when next_phase is called in PlayerRegistration
+  /// phase and the queue is full.
   fn test_game_next_phase_full_queue() {
-    // Test what should happen when next_phase is called in PlayerRegistration
-    // phase and the queue is full.
     let game =
       &mut Game::new(vec![], DraftPool::new(vec![], 0), 1, Vec::new(), 0, 0);
     assert_eq!(game.phase, Some(Phases::PlayerRegistration));
@@ -413,31 +412,33 @@ mod tests {
       team_size,
     );
     game.next_phase();
-    // Captain-selection finished?
+    // Check that captain-selection has finished before proceeding as this is a
+    // precondition of the test.
     assert_eq!(game.select_captains(), Ok(()));
 
     // Make a random selection from available players
-    let mut rng = thread_rng();
     let pool = game.draft_pool.available_players.clone();
-    let keys: Vec<&usize> = pool.keys().collect();
-    let random_key: &usize = rng.choose(&[keys]).unwrap().first().unwrap();
 
-    if let Some(_user) = game.draft_pool.available_players.get(&random_key) {
-      let message = p!(Message, "message");
-      // Drafting a single player works as expected?
-      assert_eq!(
-        commands::pick::draft_player(game, &message, false, *random_key),
-        Ok(())
-      );
+    if let Some(key) = pool.keys().next() {
+      if let Some(_user) = game.draft_pool.available_players.get(key) {
+        let message = p!(Message, "message");
+        // Drafting a single player works as expected?
+        assert_eq!(
+          commands::pick::draft_player(game, &message, false, *key),
+          Ok(())
+        );
+      }
     }
 
     // There should be as many teams as specified.
     assert_eq!(game.teams.len() as u32, team_count);
-    let team0_members = &game.teams[0].members;
-    let team1_members = &game.teams[1].members;
     // The order in which teams choose seems to be non-deterministic, so instead
     // of checking that team 1 has x members and team 2 has x+1 members, just
     // test their member counts equal 3.
-    assert_eq!((team0_members.len() + team1_members.len()) as u32, 3);
+    let member_count = &game
+      .teams
+      .iter()
+      .fold(0, |acc, team| acc + team.members.len());
+    assert_eq!(*member_count as u32, 3);
   }
 }
