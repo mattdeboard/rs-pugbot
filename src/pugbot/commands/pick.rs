@@ -38,8 +38,9 @@ pub fn draft_player<'a>(
     return Err(err);
   }
 
-  // One turn per non-Captain person in the draft pool. So we get all the users, minus
-  // enough to account for the captains (this presumes one captain per team).
+  // One turn per non-Captain person in the draft pool. So we get all the users,
+  // minus enough to account for the captains (this presumes one captain per
+  // team).
   let max_turns = (game.draft_pool.max_members - team_count()) as usize;
 
   if game.turn_number == max_turns {

@@ -18,8 +18,8 @@ pub fn update_members(
   msg: &Message,
   send_embed: bool,
 ) -> Vec<User> {
-  // The `send_embed` parameter exists only as a way to avoid trying to hit the Discord
-  // API during testing.
+  // The `send_embed` parameter exists only as a way to avoid trying to hit the
+  // Discord API during testing.
   if game.phase != Some(Phases::PlayerRegistration) {
     if let Some(embed) = game.draft_pool.members_full_embed(165, 255, 241) {
       if send_embed {
@@ -92,9 +92,10 @@ mod tests {
     );
     assert_eq!(game.phase, Some(Phases::PlayerRegistration));
     let members = commands::add::update_members(game, &message, false);
-    // There should be one member in the members vec to start with: our test user.
-    // `update_members` above should add an additional user, the author of the message (which is
-    // defined in src/tests/resources/message.json).
+    // There should be one member in the members vec to start with: our test
+    // user. `update_members` above should add an additional user, the
+    // author of the message (which is defined in
+    // src/tests/resources/message.json).
     assert_eq!(members.len(), 2);
     assert_eq!(game.phase, Some(Phases::PlayerRegistration));
   }

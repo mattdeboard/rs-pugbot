@@ -213,17 +213,20 @@ impl Phased for Game {
     self.phase = match self.phase {
       Some(Phases::PlayerRegistration) => {
         // If the draft pool is full, move to the next phase.
-        // Draft pool is full if the number of users in the pool equals the max configured size of
-        // the pool. Max size of the draft pool is expressed as `team_count * team_size`.
+        // Draft pool is full if the number of users in the pool equals the max
+        // configured size of the pool. Max size of the draft pool is
+        // expressed as `team_count * team_size`.
 
-        // If the draft pool is NOT full, do not advance to the next phase. "Not advancing to the
-        // next phase" is equivalent to returning `Phases::PlayerRegistration` as the phase.
+        // If the draft pool is NOT full, do not advance to the next phase. "Not
+        // advancing to the next phase" is equivalent to returning
+        // `Phases::PlayerRegistration` as the phase.
         if self.draft_pool.members().len() as u32
           == self.team_count * self.team_size
         {
           self.draft_pool.generate_available_players();
-          // Reset draft pool membership to an empty Vec. The pool of players available for drafting
-          //  (`available_players`) is distinct from the pool of registered players (`members`).
+          // Reset draft pool membership to an empty Vec. The pool of players
+          // available for drafting  (`available_players`) is distinct
+          // from the pool of registered players (`members`).
           self.draft_pool.members = Vec::new();
           Some(Phases::CaptainSelection)
         } else {
@@ -315,26 +318,27 @@ mod tests {
 
   #[test]
   fn test_game_next_phase_empty_queue() {
-    // Test what should happen when next_phase is called in PlayerRegistration phase and there is
-    // still room in the queue.
+    // Test what should happen when next_phase is called in PlayerRegistration
+    // phase and there is still room in the queue.
     let game =
       &mut Game::new(vec![], DraftPool::new(vec![], 12), 1, Vec::new(), 2, 6);
     assert_eq!(game.phase, Some(Phases::PlayerRegistration));
     game.next_phase();
-    // Invoking next_phase should just keep returning PlayerRegistration since there is still
-    // room in the queue.
+    // Invoking next_phase should just keep returning PlayerRegistration since
+    // there is still room in the queue.
     assert_eq!(game.phase, Some(Phases::PlayerRegistration));
   }
 
   #[test]
   fn test_game_next_phase_full_queue() {
-    // Test what should happen when next_phase is called in PlayerRegistration phase and the queue
-    // is full.
+    // Test what should happen when next_phase is called in PlayerRegistration
+    // phase and the queue is full.
     let game =
       &mut Game::new(vec![], DraftPool::new(vec![], 0), 1, Vec::new(), 0, 0);
     assert_eq!(game.phase, Some(Phases::PlayerRegistration));
     game.next_phase();
-    // Invoking next_phase should return CaptainSelection since the draft pool/queue has filled
+    // Invoking next_phase should return CaptainSelection since the draft
+    // pool/queue has filled
     assert_eq!(game.phase, Some(Phases::CaptainSelection));
   }
 
@@ -351,13 +355,16 @@ mod tests {
       2,
     );
     assert_eq!(game.phase, Some(Phases::PlayerRegistration));
-    // Invoking update_members invoke the `next_phase` call, which should advance the phase.
+    // Invoking update_members invoke the `next_phase` call, which should
+    // advance the phase.
     commands::add::update_members(game, &message, false);
     assert_eq!(game.phase, Some(Phases::CaptainSelection));
-    // Advancing to `CaptainSelection` should build the available_players HashMap.
+    // Advancing to `CaptainSelection` should build the available_players
+    // HashMap.
     assert_eq!(game.draft_pool.available_players.len(), 2);
     assert_eq!(game.select_captains(), Ok(()));
-    // There should now be one team built, with only one team member, leaving one available player.
+    // There should now be one team built, with only one team member, leaving
+    // one available player.
     assert_eq!(game.draft_pool.available_players.len(), 1);
     assert_eq!(game.teams.len(), 1);
   }
