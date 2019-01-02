@@ -94,7 +94,7 @@ impl Game {
         let pool = self.draft_pool.available_players.clone();
         let keys: Vec<&usize> = pool.keys().collect();
         let random_key: &usize = rng.choose(&[keys]).unwrap().first().unwrap();
-        println!("{:?}", random_key);
+
         if let Some(user) = self.draft_pool.pop_available_player(random_key) {
           Some(Team {
             id: i,

@@ -71,7 +71,7 @@ fn error_embed(description: &'static str) -> Embed {
     provider: None,
     thumbnail: None,
     timestamp: None,
-    title: Some(String::from("Drafting has been completed!")),
+    title: Some(String::from("ERROR")),
     url: None,
     video: None,
   }
