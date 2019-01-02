@@ -287,6 +287,7 @@ mod tests {
   use crate::models::draft_pool::DraftPool;
   use crate::models::game::{Game, Phased, Phases};
   use crate::{commands, team_id_range};
+  use rand::{thread_rng, Rng};
   use serenity::model::channel::Message;
   use serenity::model::id::UserId;
   use serenity::model::user::User;
@@ -382,5 +383,41 @@ mod tests {
     );
 
     assert_eq!(game.phase, Some(Phases::PlayerDrafting));
+  }
+
+  #[test]
+  fn test_pick_player() {
+    let authors: Vec<User> = p!(Vec, "authors");
+    let (team_count, team_size) = (2, (authors.len() / 2) as u32);
+    // Choosing 2 teams of 5 here since there are 10 authors in authors.json
+    let game = &mut Game::new(
+      vec![],
+      DraftPool::new(authors, team_count * team_size),
+      1,
+      Vec::new(),
+      team_count,
+      team_size,
+    );
+    game.next_phase();
+    // Captain-selection finished?
+    assert_eq!(game.select_captains(), Ok(()));
+
+    // Make a random selection from available players
+    let mut rng = thread_rng();
+    let pool = game.draft_pool.available_players.clone();
+    let keys: Vec<&usize> = pool.keys().collect();
+    let random_key: &usize = rng.choose(&[keys]).unwrap().first().unwrap();
+
+    if let Some(_user) = game.draft_pool.available_players.get(&random_key) {
+      let message = p!(Message, "message");
+      // Drafting a single player works as expected?
+      assert_eq!(
+        commands::pick::draft_player(game, &message, false, *random_key),
+        Ok(())
+      );
+    }
+
+    assert_eq!(game.teams.len() as u32, team_count);
+    assert_ne!(game.teams[0].members.len(), game.teams[1].members.len());
   }
 }
