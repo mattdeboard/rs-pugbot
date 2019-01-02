@@ -100,8 +100,14 @@ pub fn client_setup() {
     let db_pool = db::init_pool(None);
     let conn = db_pool.get().unwrap();
     let map_choices = db::select_maps_for_mode_id(conn, 1);
-    let game =
-      Game::new(None, draft_pool, 5, map_choices, team_count(), team_size());
+    let game = Game::new(
+      vec![],
+      draft_pool,
+      5,
+      map_choices,
+      team_count(),
+      team_size(),
+    );
     data.insert::<Game>(game);
     data.insert::<db::Pool>(db_pool);
   }

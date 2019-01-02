@@ -82,7 +82,7 @@ mod tests {
     let key = "TEAM_SIZE";
     env::set_var(key, "1");
     let game = &mut Game::new(
-      None,
+      vec![],
       DraftPool::new(vec![gen_test_user()], 12),
       1,
       Vec::new(),

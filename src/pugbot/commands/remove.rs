@@ -67,7 +67,7 @@ mod tests {
   fn test_remove_member() {
     let message = p!(Message, "message");
     let game = &mut Game::new(
-      None,
+      vec![],
       DraftPool::new(vec![gen_test_user(Some(message.author.id))], 12),
       1,
       Vec::new(),

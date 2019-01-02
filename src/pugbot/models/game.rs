@@ -23,7 +23,7 @@ pub struct Game {
   pub phase: Option<Phases>,
   pub team_count: u32,
   pub team_size: u32,
-  pub teams: Option<Vec<Team>>,
+  pub teams: Vec<Team>,
   pub turn_number: usize,
   pub turn_taker: Cycle<Range<usize>>,
 }
@@ -46,7 +46,7 @@ pub enum Outcome {
 
 impl Game {
   pub fn new(
-    teams: Option<Vec<Team>>,
+    teams: Vec<Team>,
     draft_pool: DraftPool,
     mode_id: i32,
     map_choices: Vec<GameMap>,
@@ -74,18 +74,13 @@ impl Game {
     }
   }
 
-  pub fn next_team_to_draft(&mut self) -> Team {
+  pub fn next_team_to_draft(&mut self) -> &Team {
     let next_team = self.turn_taker.next().unwrap();
-    {
-      self.team_by_id(next_team).unwrap()
-    }
+    self.team_by_id(next_team).unwrap()
   }
 
-  pub fn team_by_id(&self, id: usize) -> Option<Team> {
-    match self.teams {
-      Some(ref teams) => teams.iter().find(|t| t.id == id).cloned(),
-      None => None,
-    }
+  pub fn team_by_id(&self, id: usize) -> Option<&Team> {
+    self.teams.iter().find(|t| t.id == id)
   }
 
   pub fn select_captains(&mut self) -> Result<(), &'static str> {
@@ -115,13 +110,11 @@ impl Game {
       .map(|t| t.unwrap())
       .collect();
 
-    self.teams = Some(teams.clone());
+    self.teams = teams;
     self.next_phase();
 
-    if let Some(teams) = &self.teams {
-      if teams.len() as u32 == self.team_count {
-        return Ok(());
-      }
+    if self.teams.len() as u32 == self.team_count {
+      return Ok(());
     }
     Err("Team creation failed unexpectedly")
   }
@@ -135,7 +128,6 @@ impl Game {
     let roster: Vec<String> = self
       .teams
       .clone()
-      .unwrap()
       .iter()
       .map(|team| {
         let member_names: Vec<String> =
@@ -325,7 +317,7 @@ mod tests {
     // Test what should happen when next_phase is called in PlayerRegistration phase and there is
     // still room in the queue.
     let game =
-      &mut Game::new(None, DraftPool::new(vec![], 12), 1, Vec::new(), 2, 6);
+      &mut Game::new(vec![], DraftPool::new(vec![], 12), 1, Vec::new(), 2, 6);
     assert_eq!(game.phase, Some(Phases::PlayerRegistration));
     game.next_phase();
     // Invoking next_phase should just keep returning PlayerRegistration since there is still
@@ -338,7 +330,7 @@ mod tests {
     // Test what should happen when next_phase is called in PlayerRegistration phase and the queue
     // is full.
     let game =
-      &mut Game::new(None, DraftPool::new(vec![], 0), 1, Vec::new(), 0, 0);
+      &mut Game::new(vec![], DraftPool::new(vec![], 0), 1, Vec::new(), 0, 0);
     assert_eq!(game.phase, Some(Phases::PlayerRegistration));
     game.next_phase();
     // Invoking next_phase should return CaptainSelection since the draft pool/queue has filled
@@ -349,7 +341,7 @@ mod tests {
   fn test_select_captains() {
     let message = p!(Message, "message");
     let game = &mut Game::new(
-      None,
+      vec![],
       DraftPool::new(vec![gen_test_user()], 2),
       1,
       Vec::new(),
@@ -366,7 +358,7 @@ mod tests {
     assert_eq!(game.select_captains(), Ok(()));
     // There should now be one team built, with only one team member, leaving one available player.
     assert_eq!(game.draft_pool.available_players.len(), 1);
-    assert_eq!(game.teams.clone().unwrap().len(), 1);
+    assert_eq!(game.teams.len(), 1);
   }
 
   #[test]
@@ -374,22 +366,20 @@ mod tests {
     let authors: Vec<User> = p!(Vec, "authors");
     // Choosing 2 teams of 5 here since there are 10 authors in authors.json
     let game =
-      &mut Game::new(None, DraftPool::new(authors, 10), 1, Vec::new(), 2, 5);
+      &mut Game::new(vec![], DraftPool::new(authors, 10), 1, Vec::new(), 2, 5);
 
     assert_eq!(game.phase, Some(Phases::PlayerRegistration));
     game.next_phase();
     assert_eq!(game.phase, Some(Phases::CaptainSelection));
     assert_eq!(game.select_captains(), Ok(()));
 
-    if let Some(ref teams) = game.teams {
-      assert_eq!(
-        teams.len() as u32,
-        game.team_count,
-        "There were supposed to be {:?} teams but there are only {:?}",
-        game.team_count,
-        teams.len()
-      );
-    }
+    assert_eq!(
+      game.teams.len() as u32,
+      game.team_count,
+      "There were supposed to be {:?} teams but there are only {:?}",
+      game.team_count,
+      game.teams.len()
+    );
 
     assert_eq!(game.phase, Some(Phases::PlayerDrafting));
   }
