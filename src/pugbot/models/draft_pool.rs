@@ -11,13 +11,15 @@ use crate::traits::pool_availability::*;
 pub struct DraftPool {
   pub members: Vec<User>,
   pub available_players: HashMap<usize, User>,
+  pub max_members: u32,
 }
 
 impl DraftPool {
-  pub fn new(members: Vec<User>) -> DraftPool {
+  pub fn new(members: Vec<User>, max_members: u32) -> DraftPool {
     DraftPool {
       members: members,
       available_players: HashMap::new(),
+      max_members: max_members,
     }
   }
 

@@ -23,9 +23,9 @@ pub struct Game {
   pub phase: Option<Phases>,
   pub team_count: u32,
   pub team_size: u32,
-  pub teams: Option<Vec<Team>>,
+  pub teams: Vec<Team>,
   pub turn_number: usize,
-  pub turn_taker: Cycle<Range<usize>>,
+  pub turn_taker: Cycle<Range<u32>>,
 }
 
 #[derive(PartialEq, Debug)]
@@ -46,7 +46,7 @@ pub enum Outcome {
 
 impl Game {
   pub fn new(
-    teams: Option<Vec<Team>>,
+    teams: Vec<Team>,
     draft_pool: DraftPool,
     mode_id: i32,
     map_choices: Vec<GameMap>,
@@ -67,24 +67,10 @@ impl Game {
         .collect(),
       phase: Some(Phases::PlayerRegistration),
       teams: teams,
-      team_count: team_count,
-      team_size: team_size,
+      team_count,
+      team_size,
       turn_number: 1,
-      turn_taker: team_id_range().cycle(),
-    }
-  }
-
-  pub fn next_team_to_draft(&mut self) -> Team {
-    let next_team = self.turn_taker.next().unwrap();
-    {
-      self.team_by_id(next_team).unwrap()
-    }
-  }
-
-  pub fn team_by_id(&self, id: usize) -> Option<Team> {
-    match self.teams {
-      Some(ref teams) => teams.iter().find(|t| t.id == id).cloned(),
-      None => None,
+      turn_taker: (0..team_count).cycle(),
     }
   }
 
@@ -94,7 +80,7 @@ impl Game {
     }
 
     let mut rng = thread_rng();
-    let teams: Vec<Team> = team_id_range()
+    let teams: Vec<Team> = team_id_range(self.team_count)
       .map(|i| {
         let pool = self.draft_pool.available_players.clone();
         let keys: Vec<&usize> = pool.keys().collect();
@@ -105,7 +91,7 @@ impl Game {
             id: i,
             captain: Some(user.clone()),
             members: vec![user],
-            glicko2_ratings: vec![],
+            // glicko2_ratings: vec![],
           })
         } else {
           None
@@ -115,9 +101,13 @@ impl Game {
       .map(|t| t.unwrap())
       .collect();
 
-    self.teams = Some(teams.clone());
+    self.teams = teams;
     self.next_phase();
-    Ok(())
+
+    if self.teams.len() as u32 == self.team_count {
+      return Ok(());
+    }
+    Err("Team creation failed unexpectedly")
   }
 
   pub fn drafting_complete_embed(
@@ -129,7 +119,6 @@ impl Game {
     let roster: Vec<String> = self
       .teams
       .clone()
-      .unwrap()
       .iter()
       .map(|team| {
         let member_names: Vec<String> =
@@ -215,17 +204,20 @@ impl Phased for Game {
     self.phase = match self.phase {
       Some(Phases::PlayerRegistration) => {
         // If the draft pool is full, move to the next phase.
-        // Draft pool is full if the number of users in the pool equals the max configured size of
-        // the pool. Max size of the draft pool is expressed as `team_count * team_size`.
+        // Draft pool is full if the number of users in the pool equals the max
+        // configured size of the pool. Max size of the draft pool is
+        // expressed as `team_count * team_size`.
 
-        // If the draft pool is NOT full, do not advance to the next phase. "Not advancing to the
-        // next phase" is equivalent to returning `Phases::PlayerRegistration` as the phase.
+        // If the draft pool is NOT full, do not advance to the next phase. "Not
+        // advancing to the next phase" is equivalent to returning
+        // `Phases::PlayerRegistration` as the phase.
         if self.draft_pool.members().len() as u32
           == self.team_count * self.team_size
         {
           self.draft_pool.generate_available_players();
-          // Reset draft pool membership to an empty Vec. The pool of players available for drafting
-          //  (`available_players`) is distinct from the pool of registered players (`members`).
+          // Reset draft pool membership to an empty Vec. The pool of players
+          // available for drafting  (`available_players`) is distinct
+          // from the pool of registered players (`members`).
           self.draft_pool.members = Vec::new();
           Some(Phases::CaptainSelection)
         } else {
@@ -234,9 +226,14 @@ impl Phased for Game {
       }
       Some(Phases::CaptainSelection) => Some(Phases::PlayerDrafting),
       Some(Phases::PlayerDrafting) => {
-        self.turn_number = 1;
-        self.turn_taker = team_id_range().cycle();
-        Some(Phases::MapSelection)
+        if self.draft_pool.available_players.len() == 0 {
+          self.turn_number = 1;
+          self.turn_taker = (0..self.team_count).cycle();
+          Some(Phases::MapSelection)
+        } else {
+          self.turn_number += 1;
+          Some(Phases::PlayerDrafting)
+        }
       }
       Some(Phases::MapSelection) => {
         let mut winning_map_index: i32 = 0;
@@ -278,32 +275,20 @@ impl Key for Game {
 }
 
 #[cfg(test)]
-mod tests {
-
+pub mod tests {
   use serde;
   use serde_json;
   use serenity;
 
   use self::serde::de::Deserialize;
   use self::serde_json::Value;
-  use crate::commands;
   use crate::models::draft_pool::DraftPool;
-  use crate::models::game::Phased;
-  use crate::models::game::{Game, Phases};
+  use crate::models::game::{Game, Phased, Phases};
+  use crate::{commands, struct_from_json};
   use serenity::model::channel::Message;
   use serenity::model::id::UserId;
   use serenity::model::user::User;
   use std::fs::File;
-
-  macro_rules! p {
-    ($s:ident, $filename:expr) => {{
-      let f =
-        File::open(concat!("./tests/resources/", $filename, ".json")).unwrap();
-      let v = serde_json::from_reader::<File, Value>(f).unwrap();
-
-      $s::deserialize(v).unwrap()
-    }};
-  }
 
   fn gen_test_user() -> User {
     User {
@@ -316,53 +301,85 @@ mod tests {
   }
 
   #[test]
+  /// Test what should happen when next_phase is called in PlayerRegistration
+  /// phase and there is still room in the queue.
   fn test_game_next_phase_empty_queue() {
-    // Test what should happen when next_phase is called in PlayerRegistration phase and there is
-    // still room in the queue.
     let game =
-      &mut Game::new(None, DraftPool::new(vec![]), 1, Vec::new(), 2, 6);
+      &mut Game::new(vec![], DraftPool::new(vec![], 12), 1, Vec::new(), 2, 6);
     assert_eq!(game.phase, Some(Phases::PlayerRegistration));
     game.next_phase();
-    // Invoking next_phase should just keep returning PlayerRegistration since there is still
-    // room in the queue.
+    // Invoking next_phase should just keep returning PlayerRegistration since
+    // there is still room in the queue.
     assert_eq!(game.phase, Some(Phases::PlayerRegistration));
   }
 
   #[test]
+  /// Test what should happen when next_phase is called in PlayerRegistration
+  /// phase and the queue is full.
   fn test_game_next_phase_full_queue() {
-    // Test what should happen when next_phase is called in PlayerRegistration phase and the queue
-    // is full.
     let game =
-      &mut Game::new(None, DraftPool::new(vec![]), 1, Vec::new(), 0, 0);
+      &mut Game::new(vec![], DraftPool::new(vec![], 0), 1, Vec::new(), 0, 0);
     assert_eq!(game.phase, Some(Phases::PlayerRegistration));
     game.next_phase();
-    // Invoking next_phase should return CaptainSelection since the draft pool/queue has filled
+    // Invoking next_phase should return CaptainSelection since the draft
+    // pool/queue has filled
     assert_eq!(game.phase, Some(Phases::CaptainSelection));
   }
 
   #[test]
   fn test_select_captains() {
-    let message = p!(Message, "message");
+    let message = struct_from_json!(Message, "message");
     let game = &mut Game::new(
-      None,
-      DraftPool::new(vec![gen_test_user()]),
+      vec![],
+      DraftPool::new(vec![gen_test_user()], 2),
       1,
       Vec::new(),
       // Draft pool max size: 2 (1 * 2)
       1,
       2,
     );
-    // game.draft_pool.add_member(message.author);
     assert_eq!(game.phase, Some(Phases::PlayerRegistration));
-    // Invoking update_members invoke the `next_phase` call, which should advance the phase.
+    // Invoking update_members invoke the `next_phase` call, which should
+    // advance the phase.
     commands::add::update_members(game, &message, false);
     assert_eq!(game.phase, Some(Phases::CaptainSelection));
-    // Advancing to `CaptainSelection` should build the available_players HashMap.
+    // Advancing to `CaptainSelection` should build the available_players
+    // HashMap.
     assert_eq!(game.draft_pool.available_players.len(), 2);
     assert_eq!(game.select_captains(), Ok(()));
-    // Selecting captains successfully should consume all the entries in available_players
-    assert_eq!(game.draft_pool.available_players.len(), 0);
-    // There should now be two teams built.
-    assert_eq!(game.teams.clone().unwrap().len(), 2);
+    // There should now be one team built, with only one team member, leaving
+    // one available player.
+    assert_eq!(game.draft_pool.available_players.len(), 1);
+    assert_eq!(game.teams.len(), 1);
+  }
+
+  #[test]
+  fn test_team_creation() {
+    let authors: Vec<User> = struct_from_json!(Vec, "authors");
+    // Choosing 2 teams of 5 here since there are 10 authors in authors.json
+    let (team_count, team_size) = (2, (authors.len() / 2) as u32);
+    let game = &mut Game::new(
+      vec![],
+      DraftPool::new(authors, team_count * team_size),
+      1,
+      Vec::new(),
+      team_count,
+      team_size,
+    );
+
+    assert_eq!(game.phase, Some(Phases::PlayerRegistration));
+    game.next_phase();
+    assert_eq!(game.phase, Some(Phases::CaptainSelection));
+    assert_eq!(game.select_captains(), Ok(()));
+
+    assert_eq!(
+      game.teams.len() as u32,
+      game.team_count,
+      "There were supposed to be {:?} teams but there are only {:?}",
+      game.team_count,
+      game.teams.len()
+    );
+
+    assert_eq!(game.phase, Some(Phases::PlayerDrafting));
   }
 }
