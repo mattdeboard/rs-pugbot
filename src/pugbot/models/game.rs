@@ -25,7 +25,7 @@ pub struct Game {
   pub team_size: u32,
   pub teams: Vec<Team>,
   pub turn_number: usize,
-  pub turn_taker: Cycle<Range<usize>>,
+  pub turn_taker: Cycle<Range<u32>>,
 }
 
 #[derive(PartialEq, Debug)]
@@ -67,20 +67,11 @@ impl Game {
         .collect(),
       phase: Some(Phases::PlayerRegistration),
       teams: teams,
-      team_count: team_count,
-      team_size: team_size,
+      team_count,
+      team_size,
       turn_number: 1,
-      turn_taker: team_id_range(team_count).cycle(),
+      turn_taker: (0..team_count).cycle(),
     }
-  }
-
-  pub fn next_team_to_draft(&mut self) -> &Team {
-    let next_team = self.turn_taker.next().unwrap();
-    self.team_by_id(next_team).unwrap()
-  }
-
-  pub fn team_by_id(&self, id: usize) -> Option<&Team> {
-    self.teams.iter().find(|t| t.id == id)
   }
 
   pub fn select_captains(&mut self) -> Result<(), &'static str> {
@@ -236,7 +227,7 @@ impl Phased for Game {
       Some(Phases::CaptainSelection) => Some(Phases::PlayerDrafting),
       Some(Phases::PlayerDrafting) => {
         self.turn_number = 1;
-        self.turn_taker = team_id_range(self.team_count).cycle();
+        self.turn_taker = (0..self.team_count).cycle();
         Some(Phases::MapSelection)
       }
       Some(Phases::MapSelection) => {
@@ -440,5 +431,31 @@ mod tests {
       .iter()
       .fold(0, |acc, team| acc + team.members.len());
     assert_eq!(*member_count as u32, 3);
+  }
+
+  #[test]
+  fn test_full_teams() {
+    let authors: Vec<User> = p!(Vec, "authors");
+    let message = p!(Message, "message");
+    let (team_count, team_size) = (2, (authors.len() / 2) as u32);
+    let game = &mut Game::new(
+      vec![],
+      DraftPool::new(authors, team_count * team_size),
+      1,
+      Vec::new(),
+      team_count,
+      team_size,
+    );
+    game.next_phase();
+    assert_eq!(game.select_captains(), Ok(()));
+    let player_pool = game.draft_pool.available_players.clone();
+    for (key, _) in player_pool.iter() {
+      assert_eq!(
+        commands::pick::draft_player(game, &message, false, *key),
+        Ok(())
+      );
+    }
+    assert_eq!(game.draft_pool.available_players.len(), 0);
+    assert_eq!(game.phase, Some(Phases::MapSelection));
   }
 }

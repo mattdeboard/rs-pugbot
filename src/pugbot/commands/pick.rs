@@ -28,7 +28,7 @@ pub fn draft_player<'a>(
 
   if let Some(user) = game.draft_pool.pop_available_player(&user_index) {
     let next_id = game.turn_taker.next().unwrap();
-    game.teams[next_id].add_member(user);
+    game.teams[next_id as usize].add_member(user);
   } else {
     let err =
       "The user selected for drafting has been drafted or is otherwise invalid";
@@ -38,12 +38,7 @@ pub fn draft_player<'a>(
     return Err(err);
   }
 
-  // One turn per non-Captain person in the draft pool. So we get all the users,
-  // minus enough to account for the captains (this presumes one captain per
-  // team).
-  let max_turns = (game.draft_pool.max_members - team_count()) as usize;
-
-  if game.turn_number == max_turns {
+  if game.draft_pool.available_players.len() == 0 {
     game.next_phase();
 
     if send_embed {
