@@ -271,6 +271,7 @@ impl Key for Game {
 }
 
 #[cfg(test)]
+#[allow(unused_must_use)]
 pub mod tests {
   use serde;
   use serde_json;
@@ -342,7 +343,7 @@ pub mod tests {
     // Advancing to `CaptainSelection` should build the available_players
     // HashMap.
     assert_eq!(game.draft_pool.available_players.len(), 2);
-    assert_eq!(game.select_captains(), Ok(()));
+    game.select_captains();
     // There should now be one team built, with only one team member, leaving
     // one available player.
     assert_eq!(game.draft_pool.available_players.len(), 1);
@@ -366,7 +367,7 @@ pub mod tests {
     assert_eq!(game.phase, Some(Phases::PlayerRegistration));
     game.next_phase();
     assert_eq!(game.phase, Some(Phases::CaptainSelection));
-    assert_eq!(game.select_captains(), Ok(()));
+    game.select_captains();
 
     assert_eq!(
       game.teams.len() as u32,
