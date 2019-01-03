@@ -275,31 +275,20 @@ impl Key for Game {
 }
 
 #[cfg(test)]
-mod tests {
-
+pub mod tests {
   use serde;
   use serde_json;
   use serenity;
 
   use self::serde::de::Deserialize;
   use self::serde_json::Value;
-  use crate::commands;
   use crate::models::draft_pool::DraftPool;
   use crate::models::game::{Game, Phased, Phases};
+  use crate::{commands, struct_from_json};
   use serenity::model::channel::Message;
   use serenity::model::id::UserId;
   use serenity::model::user::User;
   use std::fs::File;
-
-  macro_rules! p {
-    ($s:ident, $filename:expr) => {{
-      let f =
-        File::open(concat!("./tests/resources/", $filename, ".json")).unwrap();
-      let v = serde_json::from_reader::<File, Value>(f).unwrap();
-
-      $s::deserialize(v).unwrap()
-    }};
-  }
 
   fn gen_test_user() -> User {
     User {
@@ -339,7 +328,7 @@ mod tests {
 
   #[test]
   fn test_select_captains() {
-    let message = p!(Message, "message");
+    let message = struct_from_json!(Message, "message");
     let game = &mut Game::new(
       vec![],
       DraftPool::new(vec![gen_test_user()], 2),
@@ -366,7 +355,7 @@ mod tests {
 
   #[test]
   fn test_team_creation() {
-    let authors: Vec<User> = p!(Vec, "authors");
+    let authors: Vec<User> = struct_from_json!(Vec, "authors");
     // Choosing 2 teams of 5 here since there are 10 authors in authors.json
     let (team_count, team_size) = (2, (authors.len() / 2) as u32);
     let game = &mut Game::new(

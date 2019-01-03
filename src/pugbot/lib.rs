@@ -35,6 +35,17 @@ use std::convert::From;
 use std::env;
 use std::ops::Range;
 
+#[macro_export]
+macro_rules! struct_from_json {
+  ($s:ident, $filename:expr) => {{
+    let f =
+      File::open(concat!("./tests/resources/", $filename, ".json")).unwrap();
+    let v = serde_json::from_reader::<File, Value>(f).unwrap();
+
+    $s::deserialize(v).unwrap()
+  }};
+}
+
 struct Handler;
 
 impl EventHandler for Handler {

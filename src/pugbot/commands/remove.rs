@@ -32,9 +32,9 @@ mod tests {
 
   use self::serde::de::Deserialize;
   use self::serde_json::Value;
-  use crate::commands;
   use crate::models::draft_pool::DraftPool;
   use crate::models::game::{Game, Phases};
+  use crate::{commands, struct_from_json};
   use serenity::model::channel::Message;
   use serenity::model::id::UserId;
   use serenity::model::user::User;
@@ -53,19 +53,9 @@ mod tests {
     }
   }
 
-  macro_rules! p {
-    ($s:ident, $filename:expr) => {{
-      let f =
-        File::open(concat!("./tests/resources/", $filename, ".json")).unwrap();
-      let v = serde_json::from_reader::<File, Value>(f).unwrap();
-
-      $s::deserialize(v).unwrap()
-    }};
-  }
-
   #[test]
   fn test_remove_member() {
-    let message = p!(Message, "message");
+    let message = struct_from_json!(Message, "message");
     let game = &mut Game::new(
       vec![],
       DraftPool::new(vec![gen_test_user(Some(message.author.id))], 12),

@@ -40,31 +40,20 @@ pub fn update_members(
 
 #[cfg(test)]
 mod tests {
-
   use serde;
   use serde_json;
   use serenity;
 
   use self::serde::de::Deserialize;
   use self::serde_json::Value;
-  use crate::commands;
   use crate::models::draft_pool::DraftPool;
   use crate::models::game::{Game, Phases};
+  use crate::{commands, struct_from_json};
   use serenity::model::channel::Message;
   use serenity::model::id::UserId;
   use serenity::model::user::User;
   use std::env;
   use std::fs::File;
-
-  macro_rules! p {
-    ($s:ident, $filename:expr) => {{
-      let f =
-        File::open(concat!("./tests/resources/", $filename, ".json")).unwrap();
-      let v = serde_json::from_reader::<File, Value>(f).unwrap();
-
-      $s::deserialize(v).unwrap()
-    }};
-  }
 
   fn gen_test_user() -> User {
     User {
@@ -78,7 +67,7 @@ mod tests {
 
   #[test]
   fn test_update_members() {
-    let message = p!(Message, "message");
+    let message = struct_from_json!(Message, "message");
     let key = "TEAM_SIZE";
     env::set_var(key, "1");
     let game = &mut Game::new(

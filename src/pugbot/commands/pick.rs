@@ -66,34 +66,23 @@ fn error_embed(description: &'static str) -> Embed {
 
 #[cfg(test)]
 mod tests {
-
   use serde;
   use serde_json;
   use serenity;
 
   use self::serde::de::Deserialize;
   use self::serde_json::Value;
-  use crate::commands;
   use crate::models::draft_pool::DraftPool;
   use crate::models::game::{Game, Phases};
   use crate::traits::phased::Phased;
+  use crate::{commands, struct_from_json};
   use serenity::model::channel::Message;
   use serenity::model::user::User;
   use std::fs::File;
 
-  macro_rules! p {
-    ($s:ident, $filename:expr) => {{
-      let f =
-        File::open(concat!("./tests/resources/", $filename, ".json")).unwrap();
-      let v = serde_json::from_reader::<File, Value>(f).unwrap();
-
-      $s::deserialize(v).unwrap()
-    }};
-  }
-
   #[test]
   fn test_pick_player() {
-    let authors: Vec<User> = p!(Vec, "authors");
+    let authors: Vec<User> = struct_from_json!(Vec, "authors");
     let (team_count, team_size) = (2, (authors.len() / 2) as u32);
     // Choosing 2 teams of 5 here since there are 10 authors in authors.json
     let game = &mut Game::new(
@@ -114,7 +103,7 @@ mod tests {
 
     if let Some(key) = pool.keys().next() {
       if let Some(_user) = game.draft_pool.available_players.get(key) {
-        let message = p!(Message, "message");
+        let message = struct_from_json!(Message, "message");
         // Drafting a single player works as expected?
         assert_eq!(
           commands::pick::draft_player(game, &message, false, *key),
@@ -137,8 +126,8 @@ mod tests {
 
   #[test]
   fn test_full_teams() {
-    let authors: Vec<User> = p!(Vec, "authors");
-    let message = p!(Message, "message");
+    let authors: Vec<User> = struct_from_json!(Vec, "authors");
+    let message = struct_from_json!(Message, "message");
     let (team_count, team_size) = (2, (authors.len() / 2) as u32);
     let game = &mut Game::new(
       vec![],
