@@ -22,7 +22,7 @@ pub fn draft_player<'a>(
   if game.phase != Some(Phases::PlayerDrafting) && send_embed {
     let err = "We're not drafting right now!";
     consume_message(msg, error_embed(err));
-    return Err("We're not drafting right now!");
+    return Err(err);
   }
 
   if let Some(user) = game.draft_pool.pop_available_player(&user_index) {
