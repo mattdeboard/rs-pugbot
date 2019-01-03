@@ -54,6 +54,11 @@ impl Game {
     team_size: u32,
   ) -> Game {
     let members = draft_pool.members.clone();
+    let mut map_votes: HashMap<i32, i32> = HashMap::new();
+
+    for i in 1..(map_choices.len() + 1) {
+      map_votes.insert(i as i32, 0);
+    }
 
     Game {
       active_map: None,
@@ -61,10 +66,7 @@ impl Game {
       eligible_voter_ids: members.iter().map(|m| m.id).collect(),
       game_mode_id: mode_id,
       map_choices: map_choices,
-      map_votes: [(1, 0), (2, 0), (3, 0), (4, 0), (5, 0)]
-        .iter()
-        .cloned()
-        .collect(),
+      map_votes,
       phase: Some(Phases::PlayerRegistration),
       teams: teams,
       team_count,
@@ -233,20 +235,29 @@ impl Phased for Game {
         }
       }
       Some(Phases::MapSelection) => {
-        let mut winning_map_index: i32 = 0;
-        let mut winning_vote_amount: i32 = 0;
-        for (key, val) in self.map_votes.iter() {
-          if *val > winning_vote_amount {
-            winning_map_index = *key;
-            winning_vote_amount = *val;
+        let vote_counts: i32 = self
+          .map_votes
+          .values()
+          .clone()
+          .fold(0, |acc, val| acc + *val);
+        if vote_counts < self.draft_pool.max_members as i32 {
+          Some(Phases::MapSelection)
+        } else {
+          let mut winning_map_index: i32 = 0;
+          let mut winning_vote_amount: i32 = 0;
+          for (key, val) in self.map_votes.iter() {
+            if *val > winning_vote_amount {
+              winning_map_index = *key;
+              winning_vote_amount = *val;
+            }
           }
+          let choice = &self.map_choices[winning_map_index as usize - 1];
+          self.active_map = Some(GameMap {
+            game_title_id: choice.game_title_id,
+            map_name: choice.map_name.clone(),
+          });
+          Some(Phases::ResultRecording)
         }
-        let choice = &self.map_choices[winning_map_index as usize - 1];
-        self.active_map = Some(GameMap {
-          game_title_id: choice.game_title_id,
-          map_name: choice.map_name.clone(),
-        });
-        Some(Phases::ResultRecording)
       }
       Some(Phases::ResultRecording) => None,
     };
