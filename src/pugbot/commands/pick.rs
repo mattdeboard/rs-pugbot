@@ -13,8 +13,8 @@ command!(pick(ctx, msg, args) {
   draft_player(game, msg, true, user_index)?;
 });
 
-pub fn draft_player<'a>(
-  game: &'a mut Game,
+pub fn draft_player(
+  game: &mut Game,
   msg: &Message,
   send_embed: bool,
   user_index: usize,
