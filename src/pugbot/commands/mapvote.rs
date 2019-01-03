@@ -108,6 +108,8 @@ mod tests {
       commands::pick::draft_player(game, &message, false, *key);
     }
 
+    // This is the key of the game map we're voting for in this test.
+    let candidate_map_idx = 1;
     let mut counter = 0;
 
     // We register a map vote for each player here.
@@ -115,21 +117,24 @@ mod tests {
       // Precondition. We should be in the right phase every time.
       assert_eq!(game.phase, Some(Phases::MapSelection));
       // Precondition. The count of votes should be what we expect.
-      assert_eq!(game.map_votes.get(&1), Some(&counter));
-      commands::mapvote::map_vote(game, &message, false, 1);
+      assert_eq!(game.map_votes.get(&candidate_map_idx), Some(&counter));
+      commands::mapvote::map_vote(game, &message, false, candidate_map_idx);
       // Postcondition. The count of votes for this particular map should be one
       // higher now.
-      assert_eq!(game.map_votes.get(&1), Some(&(counter + 1)));
+      assert_eq!(game.map_votes.get(&candidate_map_idx), Some(&(counter + 1)));
       counter += 1;
     }
 
-    // The total number of votes should now equal the total number of players.
     let vote_counts: i32 = game
       .map_votes
       .values()
       .clone()
       .fold(0, |acc, val| acc + *val);
+    // The total number of votes should now equal the total number of players.
     assert_eq!(vote_counts as u32, team_count * team_size);
+    // The number of votes for our candidate should be all the votes. (No other
+    // maps should have votes)
+    assert_eq!(game.map_votes.get(&candidate_map_idx), Some(&vote_counts));
     // The game should advance to the next phase since all the votes have been
     // tallied.
     assert_eq!(game.phase, Some(Phases::ResultRecording));
