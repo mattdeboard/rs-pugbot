@@ -1,10 +1,10 @@
 use crate::consume_message;
 use crate::models::game::{Game, Phases};
 
+use crate::commands::error_embed;
 use crate::traits::has_members::HasMembers;
 use crate::traits::phased::Phased;
-use serenity::model::channel::{Embed, Message};
-use serenity::utils::Colour;
+use serenity::model::channel::Message;
 
 command!(pick(ctx, msg, args) {
   let user_index = args.single::<usize>().unwrap();
@@ -44,24 +44,6 @@ pub fn draft_player(
     consume_message(msg, game.map_selection_embed(164, 255, 241).unwrap());
   }
   Ok(())
-}
-
-fn error_embed(description: &'static str) -> Embed {
-  Embed {
-    author: None,
-    colour: Colour::from_rgb(255, 0, 0),
-    description: Some(String::from(description)),
-    footer: None,
-    fields: Vec::new(),
-    image: None,
-    kind: "rich".to_string(),
-    provider: None,
-    thumbnail: None,
-    timestamp: None,
-    title: Some(String::from("ERROR")),
-    url: None,
-    video: None,
-  }
 }
 
 #[cfg(test)]

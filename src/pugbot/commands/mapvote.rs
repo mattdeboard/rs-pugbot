@@ -1,40 +1,57 @@
+use crate::commands::error_embed;
 use crate::consume_message;
 use crate::models::game::{Game, Phases};
 use crate::traits::phased::Phased;
+use serenity::model::channel::Message;
 
 command!(mapvote(ctx, msg, args) {
   let mut data = ctx.data.lock();
   let game = data.get_mut::<Game>().unwrap();
+  map_vote(game, msg, true, args.single::<usize>()? as i32)?;
+});
 
-  if game.phase != Some(Phases::MapSelection) {
-    return panic!("We're not picking maps right now!");
+#[allow(unused_must_use)]
+pub fn map_vote(
+  game: &mut Game,
+  msg: &Message,
+  send_embed: bool,
+  map_index: i32,
+) -> Result<(), &'static str> {
+  if game.phase != Some(Phases::MapSelection) && send_embed {
+    let err = "We're not picking maps right now!";
+    consume_message(msg, error_embed(err));
+    return Err(err);
   }
-
   if !game.draft_pool.members.contains(&msg.author) {
     match msg.author.direct_message(|m| m.content(
       "Sorry, but you're not allowed to map vote because you're not registered to play!"
     )) {
       Ok(_) => {
-        let _ = msg.reply("You're welcome");
+        msg.reply("You're welcome");
+        Ok(())
       },
       Err(why) => {
         println!("Error sending message: {:?}", why);
-        let _ = msg.reply("Had some kind of problem sending you a message.");
+        let err = "Had some kind of problem sending you a message.";
+        msg.reply(err);
+        consume_message(msg, error_embed(err));
+        Err(err)
       }
     }
   } else {
-    let map_index = args.single::<usize>().unwrap() as i32;
-
     if let Some(vote_count) = game.map_votes.clone().get(&map_index) {
       game.map_votes.insert(map_index, vote_count + 1);
       game.register_vote(msg.author.id);
+      game.next_phase();
 
-      if game.eligible_voter_ids.len() == 0 {
-        game.next_phase();
+      if game.phase == Some(Phases::ResultRecording) && send_embed {
         consume_message(msg, game.map_winner_embed(164, 255, 241).unwrap());
       }
+      Ok(())
     } else {
-      return panic!("Invalid map key");
+      let err = "Invalid map selection.";
+      consume_message(msg, error_embed(err));
+      Err(err)
     }
   }
-});
+}

@@ -127,10 +127,6 @@ impl Game {
       })
       .collect();
 
-    if self.phase == Some(Phases::PlayerDrafting) {
-      self.next_phase();
-    }
-
     Some(Embed {
       author: None,
       colour: Colour::from_rgb(r, g, b),
