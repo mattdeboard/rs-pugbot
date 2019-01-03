@@ -17,11 +17,16 @@ pub fn map_vote(
   send_embed: bool,
   map_index: i32,
 ) -> Result<(), &'static str> {
-  if game.phase != Some(Phases::MapSelection) && send_embed {
+  if game.phase != Some(Phases::MapSelection) {
     let err = "We're not picking maps right now!";
-    consume_message(msg, error_embed(err));
+
+    if send_embed {
+      consume_message(msg, error_embed(err));
+    }
+
     return Err(err);
   }
+
   if !game.draft_pool.members.contains(&msg.author) {
     match msg.author.direct_message(|m| m.content(
       "Sorry, but you're not allowed to map vote because you're not registered to play!"
@@ -34,7 +39,11 @@ pub fn map_vote(
         println!("Error sending message: {:?}", why);
         let err = "Had some kind of problem sending you a message.";
         msg.reply(err);
-        consume_message(msg, error_embed(err));
+
+        if send_embed {
+          consume_message(msg, error_embed(err));
+        }
+
         Err(err)
       }
     }
@@ -50,7 +59,11 @@ pub fn map_vote(
       Ok(())
     } else {
       let err = "Invalid map selection.";
-      consume_message(msg, error_embed(err));
+
+      if send_embed {
+        consume_message(msg, error_embed(err));
+      }
+
       Err(err)
     }
   }
