@@ -111,7 +111,7 @@ mod tests {
     let mut counter = 0;
 
     // We register a map vote for each player here.
-    for _ in 1..((team_count * team_size) + 1) {
+    for _ in 0..(team_count * team_size) {
       // Precondition. We should be in the right phase every time.
       assert_eq!(game.phase, Some(Phases::MapSelection));
       // Precondition. The count of votes should be what we expect.
