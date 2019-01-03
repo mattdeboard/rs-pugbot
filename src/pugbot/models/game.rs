@@ -198,6 +198,7 @@ impl Game {
 impl Phased for Game {
   fn next_phase(&mut self) {
     self.phase = match self.phase {
+      None => Some(Phases::PlayerRegistration),
       Some(Phases::PlayerRegistration) => {
         // If the draft pool is full, move to the next phase.
         // Draft pool is full if the number of users in the pool equals the max
@@ -247,17 +248,18 @@ impl Phased for Game {
         });
         Some(Phases::ResultRecording)
       }
-      _ => None,
+      Some(Phases::ResultRecording) => None,
     };
   }
 
   fn previous_phase(&mut self) {
     self.phase = match self.phase {
+      None => Some(Phases::ResultRecording),
       Some(Phases::CaptainSelection) => Some(Phases::PlayerRegistration),
       Some(Phases::PlayerDrafting) => Some(Phases::CaptainSelection),
       Some(Phases::MapSelection) => Some(Phases::PlayerDrafting),
       Some(Phases::ResultRecording) => Some(Phases::MapSelection),
-      _ => None,
+      Some(Phases::PlayerRegistration) => None,
     };
   }
 
