@@ -37,18 +37,11 @@ pub fn draft_player<'a>(
     return Err(err);
   }
 
-  if game.draft_pool.available_players.len() == 0 {
-    game.next_phase();
+  game.next_phase();
 
-    if send_embed {
-      consume_message(
-        msg,
-        game.drafting_complete_embed(165, 255, 241).unwrap(),
-      );
-      consume_message(msg, game.map_selection_embed(164, 255, 241).unwrap());
-    }
-  } else {
-    game.turn_number += 1;
+  if game.phase == Some(Phases::MapSelection) && send_embed {
+    consume_message(msg, game.drafting_complete_embed(165, 255, 241).unwrap());
+    consume_message(msg, game.map_selection_embed(164, 255, 241).unwrap());
   }
   Ok(())
 }

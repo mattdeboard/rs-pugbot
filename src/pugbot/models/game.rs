@@ -226,9 +226,14 @@ impl Phased for Game {
       }
       Some(Phases::CaptainSelection) => Some(Phases::PlayerDrafting),
       Some(Phases::PlayerDrafting) => {
-        self.turn_number = 1;
-        self.turn_taker = (0..self.team_count).cycle();
-        Some(Phases::MapSelection)
+        if self.draft_pool.available_players.len() == 0 {
+          self.turn_number = 1;
+          self.turn_taker = (0..self.team_count).cycle();
+          Some(Phases::MapSelection)
+        } else {
+          self.turn_number += 1;
+          Some(Phases::PlayerDrafting)
+        }
       }
       Some(Phases::MapSelection) => {
         let mut winning_map_index: i32 = 0;
