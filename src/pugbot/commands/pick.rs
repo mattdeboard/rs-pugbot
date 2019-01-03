@@ -1,10 +1,10 @@
 use crate::consume_message;
 use crate::models::game::{Game, Phases};
 
+use crate::commands::error_embed;
 use crate::traits::has_members::HasMembers;
 use crate::traits::phased::Phased;
-use serenity::model::channel::{Embed, Message};
-use serenity::utils::Colour;
+use serenity::model::channel::Message;
 
 command!(pick(ctx, msg, args) {
   let user_index = args.single::<usize>().unwrap();
@@ -46,25 +46,8 @@ pub fn draft_player(
   Ok(())
 }
 
-fn error_embed(description: &'static str) -> Embed {
-  Embed {
-    author: None,
-    colour: Colour::from_rgb(255, 0, 0),
-    description: Some(String::from(description)),
-    footer: None,
-    fields: Vec::new(),
-    image: None,
-    kind: "rich".to_string(),
-    provider: None,
-    thumbnail: None,
-    timestamp: None,
-    title: Some(String::from("ERROR")),
-    url: None,
-    video: None,
-  }
-}
-
 #[cfg(test)]
+#[allow(unused_must_use)]
 mod tests {
   use serde;
   use serde_json;
@@ -138,13 +121,11 @@ mod tests {
       team_size,
     );
     game.next_phase();
-    assert_eq!(game.select_captains(), Ok(()));
+    game.select_captains();
+
     let player_pool = game.draft_pool.available_players.clone();
     for (key, _) in player_pool.iter() {
-      assert_eq!(
-        commands::pick::draft_player(game, &message, false, *key),
-        Ok(())
-      );
+      commands::pick::draft_player(game, &message, false, *key);
     }
     // available_players should be empty. Each drafted player is popped out of
     // the available_players pool.
