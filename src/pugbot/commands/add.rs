@@ -18,8 +18,8 @@ pub fn update_members(
   msg: &Message,
   send_embed: bool,
 ) -> Vec<User> {
-  // The `send_embed` parameter exists only as a way to avoid trying to hit the Discord
-  // API during testing.
+  // The `send_embed` parameter exists only as a way to avoid trying to hit the
+  // Discord API during testing.
   if game.phase != Some(Phases::PlayerRegistration) {
     if let Some(embed) = game.draft_pool.members_full_embed(165, 255, 241) {
       if send_embed {
@@ -40,31 +40,20 @@ pub fn update_members(
 
 #[cfg(test)]
 mod tests {
-
   use serde;
   use serde_json;
   use serenity;
 
   use self::serde::de::Deserialize;
   use self::serde_json::Value;
-  use crate::commands;
   use crate::models::draft_pool::DraftPool;
   use crate::models::game::{Game, Phases};
+  use crate::{commands, struct_from_json};
   use serenity::model::channel::Message;
   use serenity::model::id::UserId;
   use serenity::model::user::User;
   use std::env;
   use std::fs::File;
-
-  macro_rules! p {
-    ($s:ident, $filename:expr) => {{
-      let f =
-        File::open(concat!("./tests/resources/", $filename, ".json")).unwrap();
-      let v = serde_json::from_reader::<File, Value>(f).unwrap();
-
-      $s::deserialize(v).unwrap()
-    }};
-  }
 
   fn gen_test_user() -> User {
     User {
@@ -78,12 +67,12 @@ mod tests {
 
   #[test]
   fn test_update_members() {
-    let message = p!(Message, "message");
+    let message = struct_from_json!(Message, "message");
     let key = "TEAM_SIZE";
     env::set_var(key, "1");
     let game = &mut Game::new(
-      None,
-      DraftPool::new(vec![gen_test_user()]),
+      vec![],
+      DraftPool::new(vec![gen_test_user()], 12),
       1,
       Vec::new(),
       // Draft pool max size: 12 (2 * 6)
@@ -92,9 +81,10 @@ mod tests {
     );
     assert_eq!(game.phase, Some(Phases::PlayerRegistration));
     let members = commands::add::update_members(game, &message, false);
-    // There should be one member in the members vec to start with: our test user.
-    // `update_members` above should add an additional user, the author of the message (which is
-    // defined in src/tests/resources/message.json).
+    // There should be one member in the members vec to start with: our test
+    // user. `update_members` above should add an additional user, the
+    // author of the message (which is defined in
+    // src/tests/resources/message.json).
     assert_eq!(members.len(), 2);
     assert_eq!(game.phase, Some(Phases::PlayerRegistration));
   }

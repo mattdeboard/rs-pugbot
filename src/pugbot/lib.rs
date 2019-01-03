@@ -6,6 +6,8 @@ extern crate log;
 extern crate serenity;
 #[macro_use]
 extern crate diesel;
+#[macro_use]
+extern crate serde_derive;
 
 use env_logger;
 use kankyo;
@@ -17,9 +19,9 @@ pub mod schema;
 pub mod traits;
 
 use crate::models::draft_pool::DraftPool;
-use crate::models::game::{Game, Outcome};
-use crate::models::team::Team;
-use glicko2::{new_rating, GameResult, Glicko2Rating};
+use crate::models::game::Game;
+// use crate::models::team::Team;
+// use glicko2::{new_rating, GameResult, Glicko2Rating};
 use serenity::builder::CreateEmbed;
 use serenity::framework::StandardFramework;
 use serenity::http;
@@ -32,6 +34,17 @@ use std::collections::HashSet;
 use std::convert::From;
 use std::env;
 use std::ops::Range;
+
+#[macro_export]
+macro_rules! struct_from_json {
+  ($s:ident, $filename:expr) => {{
+    let f =
+      File::open(concat!("./tests/resources/", $filename, ".json")).unwrap();
+    let v = serde_json::from_reader::<File, Value>(f).unwrap();
+
+    $s::deserialize(v).unwrap()
+  }};
+}
 
 struct Handler;
 
@@ -60,11 +73,10 @@ fn team_size() -> u32 {
   }
 }
 
-fn team_id_range() -> Range<usize> {
-  let tc = team_count();
+pub fn team_id_range(team_count: u32) -> Range<usize> {
   Range {
     start: 1,
-    end: (tc as usize) + 1,
+    end: team_count as usize + 1,
   }
 }
 
@@ -95,12 +107,18 @@ pub fn client_setup() {
 
   {
     let mut data = client.data.lock();
-    let draft_pool = DraftPool::new(Vec::new());
+    let draft_pool = DraftPool::new(Vec::new(), team_count() * team_size());
     let db_pool = db::init_pool(None);
     let conn = db_pool.get().unwrap();
     let map_choices = db::select_maps_for_mode_id(conn, 1);
-    let game =
-      Game::new(None, draft_pool, 5, map_choices, team_count(), team_size());
+    let game = Game::new(
+      vec![],
+      draft_pool,
+      5,
+      map_choices,
+      team_count(),
+      team_size(),
+    );
     data.insert::<Game>(game);
     data.insert::<db::Pool>(db_pool);
   }
@@ -143,19 +161,19 @@ fn bot_owners() -> HashSet<UserId> {
   }
 }
 
-pub fn new_rating_from_outcome(
-  original_rating: Glicko2Rating,
-  opposing_team: Team,
-  outcome: Outcome,
-) -> Glicko2Rating {
-  let results: Vec<GameResult> = opposing_team
-    .glicko2_ratings
-    .into_iter()
-    .map(|r| match outcome {
-      Outcome::Win => GameResult::win(r),
-      Outcome::Loss => GameResult::loss(r),
-      Outcome::Draw => GameResult::draw(r),
-    })
-    .collect();
-  new_rating(original_rating, &results, 0.3)
-}
+// pub fn new_rating_from_outcome(
+//   original_rating: Glicko2Rating,
+//   opposing_team: Team,
+//   outcome: Outcome,
+// ) -> Glicko2Rating {
+//   let results: Vec<GameResult> = opposing_team
+//     .glicko2_ratings
+//     .into_iter()
+//     .map(|r| match outcome {
+//       Outcome::Win => GameResult::win(r),
+//       Outcome::Loss => GameResult::loss(r),
+//       Outcome::Draw => GameResult::draw(r),
+//     })
+//     .collect();
+//   new_rating(original_rating, &results, 0.3)
+// }

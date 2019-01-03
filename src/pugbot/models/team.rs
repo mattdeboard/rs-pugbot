@@ -1,18 +1,17 @@
-use glicko2::Glicko2Rating;
+use crate::traits::has_members::HasMembers;
+// use glicko2::Glicko2Rating;
 use serenity::model::channel::{Embed, EmbedFooter};
 use serenity::model::user::User;
 use serenity::utils::Colour;
 use std::clone::Clone;
 use typemap::Key;
 
-use crate::traits::has_members::HasMembers;
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Team {
   pub id: usize,
   pub captain: Option<User>,
   pub members: Vec<User>,
-  pub glicko2_ratings: Vec<Glicko2Rating>,
+  // pub glicko2_ratings: Vec<Glicko2Rating>,
 }
 
 impl Key for Team {
