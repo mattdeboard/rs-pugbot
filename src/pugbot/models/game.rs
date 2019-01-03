@@ -455,7 +455,18 @@ mod tests {
         Ok(())
       );
     }
+    // available_players should be empty. Each drafted player is popped out of
+    // the available_players pool.
     assert_eq!(game.draft_pool.available_players.len(), 0);
+    // Since all players were drafted and teams are now full, the game should
+    // proceed to the next phase.
     assert_eq!(game.phase, Some(Phases::MapSelection));
+    let member_count = &game
+      .teams
+      .iter()
+      .fold(0, |acc, team| acc + team.members.len());
+    // Final post-condition: The sum of the counts of each team's roster should
+    // equal the max size of the draft pool.
+    assert_eq!(*member_count as u32, team_count * team_size);
   }
 }
