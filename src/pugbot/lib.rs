@@ -23,6 +23,7 @@ use crate::models::game::Game;
 // use crate::models::team::Team;
 // use glicko2::{new_rating, GameResult, Glicko2Rating};
 use serenity::builder::CreateEmbed;
+use serenity::framework::standard::help_commands;
 use serenity::framework::StandardFramework;
 use serenity::http;
 use serenity::model::channel::{Embed, Message};
@@ -126,6 +127,7 @@ pub fn client_setup() {
   client.with_framework(
     StandardFramework::new()
       .configure(|c| c.owners(bot_owners()).prefix("~"))
+      .help(help_commands::with_embeds)
       .command("add", |c| {
         c.cmd(commands::add::add).batch_known_as(vec!["a"])
       })
