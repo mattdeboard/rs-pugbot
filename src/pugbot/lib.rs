@@ -128,18 +128,50 @@ pub fn client_setup() {
     StandardFramework::new()
       .configure(|c| c.owners(bot_owners()).prefix("~"))
       .help(help_commands::with_embeds)
-      .command("add", |c| {
-        c.cmd(commands::add::add).batch_known_as(vec!["a"])
+      .group("Map Voting", |g| {
+        g.command("vote", |c| {
+          c.desc("Records your vote for map selection")
+            .cmd(commands::mapvote::mapvote)
+            .batch_known_as(vec!["v", "mv"])
+        })
       })
-      .command("remove", |c| {
-        c.cmd(commands::remove::remove).batch_known_as(vec!["r"])
+      .group("Player Drafting", |g| {
+        g.desc("Commands here are available to Captains only")
+          .command("pick", |c| {
+            c.desc("(Captains Only) `pick #` adds player `#` to your team.
+
+Once enough players to fill out all the teams have added themselves, captains will be automatically selected at random. One captain will be selected per team.
+
+The bot will then display a numbered list of players, like so:
+
+```
+  Index     Player Name
+----------|-------------
+    1     | Alice
+    2     | Bob
+    3     | Charlie
+```
+
+Captains will be able to use the `~pick <index>` command.")
+              .cmd(commands::pick::pick)
+              .batch_known_as(vec!["p"])
+          })
       })
-      .command("pick", |c| {
-        c.cmd(commands::pick::pick).batch_known_as(vec!["p"])
-      })
-      .command("vote", |c| {
-        c.cmd(commands::mapvote::mapvote)
-          .batch_known_as(vec!["v", "mv"])
+      .group("Player Registration", |g| {
+        g.command("add", |c| {
+          c.desc(
+            "Adds yourself to the pool of draftable players, or \"draft pool.\"
+
+Once enough people to fill out all the teams have added themselves, captains will be automatically selected at random, and drafting will begin.",
+          )
+          .cmd(commands::add::add)
+          .batch_known_as(vec!["a"])
+        })
+        .command("remove", |c| {
+          c.desc("Removes yourself from the draft pool.")
+            .cmd(commands::remove::remove)
+            .batch_known_as(vec!["r"])
+        })
       }),
   );
   client.start();
