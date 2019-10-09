@@ -4,6 +4,8 @@
       "path": "."
     }
   ],
-  "settings": {},
+  "settings": {
+    "editor.formatOnSave": true
+  },
   "extensions": { "recommendations": ["rust-lang.rust"] }
 }
