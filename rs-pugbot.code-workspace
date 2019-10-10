@@ -13,7 +13,6 @@
             "scope": "support.constant.core.rust",
             "settings": {
               "foreground": "#91b18a",
-              "fontStyle": "italic"
             }
           },
           {
@@ -28,7 +27,7 @@
               "foreground": "#b1948a",
               "fontStyle": "italic"
             }
-          }
+          },
         ]
       }
     }
