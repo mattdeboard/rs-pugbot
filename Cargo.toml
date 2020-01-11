@@ -22,7 +22,7 @@ diesel = { version = "^1.4", features = ["chrono", "postgres", "serde_json", "hu
 diesel_migrations = "^1.4"
 env_logger = "^0.7"
 glicko2 = "*"
-kankyo = "~0.1"
+kankyo = "~0.3"
 log = "~0.3"
 num = "*"
 r2d2 = "*"
