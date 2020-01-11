@@ -16,7 +16,7 @@ use serenity::prelude::{Context, EventHandler};
 pub fn add(ctx: &mut Context, msg: &Message) -> CommandResult {
   let mut data = ctx.data.lock();
   let game = data.get_mut::<Game>().unwrap();
-  update_members(game, msg, true);
+  return update_members(game, msg, true);
 }
 
 pub fn update_members(

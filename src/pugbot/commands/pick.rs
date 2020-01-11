@@ -4,14 +4,20 @@ use crate::models::game::{Game, Phases};
 use crate::commands::error_embed;
 use crate::traits::has_members::HasMembers;
 use crate::traits::phased::Phased;
+use serenity::framework::standard::{
+  macros::{command, group},
+  Args, CommandResult, StandardFramework,
+};
 use serenity::model::channel::Message;
+use serenity::prelude::{Context, EventHandler};
 
-command!(pick(ctx, msg, args) {
+#[command]
+pub fn pick(ctx: &mut Context, msg: &Message, args: Args) -> CommandResult {
   let user_index = args.single::<usize>().unwrap();
   let mut data = ctx.data.lock();
   let game = data.get_mut::<Game>().unwrap();
-  draft_player(game, msg, true, user_index)?;
-});
+  return draft_player(game, msg, true, user_index)?;
+}
 
 pub fn draft_player(
   game: &mut Game,

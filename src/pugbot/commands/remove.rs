@@ -1,14 +1,20 @@
 use crate::consume_message;
 use crate::models::game::Game;
 use crate::traits::has_members::HasMembers;
+use serenity::framework::standard::{
+  macros::{command, group},
+  CommandResult, StandardFramework,
+};
 use serenity::model::channel::Message;
 use serenity::model::user::User;
+use serenity::prelude::{Context, EventHandler};
 
-command!(remove(ctx, msg) {
+#[command]
+pub fn remove(ctx: &mut Context, msg: &Message) -> CommandResult {
   let mut data = ctx.data.lock();
   let mut game = data.get_mut::<Game>().unwrap();
-  remove_member(game, msg, true);
-});
+  return remove_member(game, msg, true);
+}
 
 pub fn remove_member(
   game: &mut Game,

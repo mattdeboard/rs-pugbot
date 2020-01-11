@@ -17,6 +17,7 @@ pub mod models;
 pub mod schema;
 pub mod traits;
 
+use crate::commands::{add::add, mapvote::mapvote, pick::pick, remove::remove};
 use crate::models::draft_pool::DraftPool;
 use crate::models::game::Game;
 // use crate::models::team::Team;
@@ -27,7 +28,6 @@ use serenity::framework::standard::{
   macros::{command, group},
   CommandResult, StandardFramework,
 };
-use serenity::framework::StandardFramework;
 use serenity::http;
 use serenity::model::channel::{Embed, Message};
 use serenity::model::event::ResumedEvent;
@@ -49,6 +49,12 @@ macro_rules! struct_from_json {
     $s::deserialize(v).unwrap()
   }};
 }
+
+group!({ 
+  name: "general",
+  options: {},
+  commands: [add, mapvote, pick, remove],
+});
 
 struct Handler;
 
@@ -134,7 +140,7 @@ pub fn client_setup() {
       .group("Map Voting", |g| {
         g.command("vote", |c| {
           c.desc("Records your vote for map selection")
-            .cmd(commands::mapvote::mapvote)
+            .cmd(mapvote)
             .batch_known_as(vec!["v", "mv"])
         })
       })
@@ -156,7 +162,7 @@ The bot will then display a numbered list of players, like so:
 ```
 
 Captains will be able to use the `~pick <index>` command.")
-              .cmd(commands::pick::pick)
+              .cmd(pick)
               .batch_known_as(vec!["p"])
           })
       })
@@ -167,12 +173,12 @@ Captains will be able to use the `~pick <index>` command.")
 
 Once enough people to fill out all the teams have added themselves, captains will be automatically selected at random, and drafting will begin.",
           )
-          .cmd(commands::add::add)
+          .cmd(add)
           .batch_known_as(vec!["a"])
         })
         .command("remove", |c| {
           c.desc("Removes yourself from the draft pool.")
-            .cmd(commands::remove::remove)
+            .cmd(remove)
             .batch_known_as(vec!["r"])
         })
       }),
