@@ -1,7 +1,6 @@
 #![allow(unused_attributes)]
 #[macro_use]
 extern crate log;
-#[macro_use]
 extern crate serenity;
 #[macro_use]
 extern crate diesel;
@@ -17,18 +16,23 @@ pub mod models;
 pub mod schema;
 pub mod traits;
 
-use crate::commands::{add::add, mapvote::mapvote, pick::pick, remove::remove};
+use crate::commands::{
+  add::ADD_COMMAND, mapvote::MAPVOTE_COMMAND, pick::PICK_COMMAND,
+  remove::REMOVE_COMMAND,
+};
 use crate::models::draft_pool::DraftPool;
 use crate::models::game::Game;
 // use crate::models::team::Team;
 // use glicko2::{new_rating, GameResult, Glicko2Rating};
 use serenity::builder::CreateEmbed;
-use serenity::framework::standard::help_commands;
 use serenity::framework::standard::{
-  macros::{command, group},
-  CommandResult, StandardFramework,
+  help_commands,
+  macros::{check, command, group, help},
+  Args, CheckResult, CommandGroup, CommandOptions, CommandResult,
+  DispatchError, HelpOptions, StandardFramework,
 };
-use serenity::http;
+
+use serenity::http::raw::Http;
 use serenity::model::channel::{Embed, Message};
 use serenity::model::event::ResumedEvent;
 use serenity::model::gateway::Ready;
@@ -37,6 +41,7 @@ use serenity::prelude::*;
 use std::collections::HashSet;
 use std::convert::From;
 use std::env;
+
 use std::ops::Range;
 
 #[macro_export]
@@ -50,11 +55,11 @@ macro_rules! struct_from_json {
   }};
 }
 
-group!({ 
-  name: "general",
-  options: {},
-  commands: [add, mapvote, pick, remove],
-});
+// group!({
+//   name: "general",
+//   options: {},
+//   commands: [ADD_COMMAND, MAPVOTE_COMMAND, PICK_COMMAND, REMOVE_COMMAND],
+// });
 
 struct Handler;
 
@@ -108,6 +113,17 @@ fn queue_size() -> u32 {
   team_count() * team_size()
 }
 
+#[help]
+fn pugbot_help(
+  ctx: &mut Context,
+  msg: &Message,
+  args: Args,
+  help_options: &'static HelpOptions,
+  groups: &[&'static CommandGroup],
+  owners: HashSet<UserId>,
+) -> CommandResult {
+  help_commands::with_embeds(ctx, msg, args, help_options, groups, owners)
+}
 #[allow(unused_must_use)]
 pub fn client_setup() {
   env_logger::init().expect("Failed to initialize env_logger");
@@ -116,7 +132,7 @@ pub fn client_setup() {
   let mut client = Client::new(&token, Handler).expect("Err creating client");
 
   {
-    let mut data = client.data.lock();
+    let mut data = client.data.write();
     let draft_pool = DraftPool::new(Vec::new(), team_count() * team_size());
     let db_pool = db::init_pool(None);
     let conn = db_pool.get().unwrap();
@@ -133,14 +149,23 @@ pub fn client_setup() {
     data.insert::<db::Pool>(db_pool);
   }
 
+  let owners = match client.cache_and_http.http.get_current_application_info() {
+    Ok(info) => {
+      let mut set = HashSet::new();
+      set.insert(info.owner.id);
+      set
+    }
+    Err(why) => panic!("Couldn't get application info: {:?}", why),
+  };
+
   client.with_framework(
     StandardFramework::new()
-      .configure(|c| c.owners(bot_owners()).prefix("~"))
-      .help(help_commands::with_embeds)
+      .configure(|c| c.owners(owners).prefix("~"))
+      .help(&PUGBOT_HELP)
       .group("Map Voting", |g| {
         g.command("vote", |c| {
           c.desc("Records your vote for map selection")
-            .cmd(mapvote)
+            .cmd(MAPVOTE_COMMAND)
             .batch_known_as(vec!["v", "mv"])
         })
       })
@@ -162,7 +187,7 @@ The bot will then display a numbered list of players, like so:
 ```
 
 Captains will be able to use the `~pick <index>` command.")
-              .cmd(pick)
+              .cmd(PICK_COMMAND)
               .batch_known_as(vec!["p"])
           })
       })
@@ -173,12 +198,12 @@ Captains will be able to use the `~pick <index>` command.")
 
 Once enough people to fill out all the teams have added themselves, captains will be automatically selected at random, and drafting will begin.",
           )
-          .cmd(add)
+          .cmd(ADD_COMMAND)
           .batch_known_as(vec!["a"])
         })
         .command("remove", |c| {
           c.desc("Removes yourself from the draft pool.")
-            .cmd(remove)
+            .cmd(REMOVE_COMMAND)
             .batch_known_as(vec!["r"])
         })
       }),
@@ -193,16 +218,17 @@ pub fn consume_message(msg: &Message, embed: Embed) {
     .unwrap();
 }
 
-fn bot_owners() -> HashSet<UserId> {
-  match http::get_current_application_info() {
-    Ok(info) => {
-      let mut set = HashSet::new();
-      set.insert(info.owner.id);
-      set
-    }
-    Err(why) => panic!("Couldn't get application info: {:?}", why),
-  }
-}
+// fn bot_owners() -> HashSet<UserId> {
+//   let http = Http {};
+//   match http.get_current_application_info() {
+//     Ok(info) => {
+//       let mut set = HashSet::new();
+//       set.insert(info.owner.id);
+//       set
+//     }
+//     Err(why) => panic!("Couldn't get application info: {:?}", why),
+//   }
+// }
 
 // pub fn new_rating_from_outcome(
 //   original_rating: Glicko2Rating,

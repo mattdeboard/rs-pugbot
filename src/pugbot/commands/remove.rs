@@ -3,7 +3,7 @@ use crate::models::game::Game;
 use crate::traits::has_members::HasMembers;
 use serenity::framework::standard::{
   macros::{command, group},
-  CommandResult, StandardFramework,
+  CommandError, CommandResult, StandardFramework,
 };
 use serenity::model::channel::Message;
 use serenity::model::user::User;
@@ -11,7 +11,7 @@ use serenity::prelude::{Context, EventHandler};
 
 #[command]
 pub fn remove(ctx: &mut Context, msg: &Message) -> CommandResult {
-  let mut data = ctx.data.lock();
+  let mut data = ctx.data.write();
   let mut game = data.get_mut::<Game>().unwrap();
   return remove_member(game, msg, true);
 }
@@ -20,14 +20,14 @@ pub fn remove_member(
   game: &mut Game,
   msg: &Message,
   send_embed: bool,
-) -> Vec<User> {
+) -> Result<(), CommandError> {
   let author = msg.author.clone();
   if let Some(embed) = game.draft_pool.remove_member(author) {
     if send_embed {
       consume_message(msg, embed)
     }
   }
-  game.draft_pool.members()
+  Ok(())
 }
 
 #[cfg(test)]

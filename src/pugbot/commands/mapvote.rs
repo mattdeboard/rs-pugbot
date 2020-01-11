@@ -4,25 +4,26 @@ use crate::models::game::{Game, Phases};
 use crate::traits::phased::Phased;
 use serenity::framework::standard::{
   macros::{command, group},
-  Args, CommandResult, StandardFramework,
+  Args, CommandError, CommandResult, StandardFramework,
 };
 use serenity::model::channel::Message;
 use serenity::prelude::{Context, EventHandler};
 
 #[command]
 pub fn mapvote(ctx: &mut Context, msg: &Message, args: Args) -> CommandResult {
-  let mut data = ctx.data.lock();
+  let mut data = ctx.data.write();
   let game = data.get_mut::<Game>().unwrap();
-  return map_vote(game, msg, true, args.single::<usize>()? as i32)?;
+  map_vote(ctx, game, msg, true, args.single::<usize>()? as i32)
 }
 
 #[allow(unused_must_use)]
 pub fn map_vote(
+  ctx: &mut Context,
   game: &mut Game,
   msg: &Message,
   send_embed: bool,
   map_index: i32,
-) -> Result<(), &'static str> {
+) -> Result<(), CommandError> {
   if game.phase != Some(Phases::MapSelection) {
     let err = "We're not picking maps right now!";
 
@@ -30,23 +31,23 @@ pub fn map_vote(
       consume_message(msg, error_embed(err));
     }
 
-    return Err(err);
+    return Err(CommandError::from(err));
   }
 
   if !game.draft_pool.members.contains(&msg.author) && send_embed {
-    match msg.author.direct_message(|m| m.content(
+    match msg.author.direct_message(&ctx, |m| m.content(
       "Sorry, but you're not allowed to map vote because you're not registered to play!"
     )) {
       Ok(_) => {
-        msg.reply("You're welcome");
+        msg.reply(&ctx, "You're welcome");
         Ok(())
       },
       Err(why) => {
         println!("Error sending message: {:?}", why);
         let err = "Had some kind of problem sending you a message.";
-        msg.reply(err);
+        msg.reply(&ctx, err);
         consume_message(msg, error_embed(err));
-        Err(err)
+        Err(CommandError::from(err))
       }
     }
   } else {
@@ -66,7 +67,7 @@ pub fn map_vote(
         consume_message(msg, error_embed(err));
       }
 
-      Err(err)
+      Err(CommandError::from(err))
     }
   }
 }

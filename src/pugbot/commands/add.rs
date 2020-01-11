@@ -8,22 +8,22 @@ use crate::traits::phased::Phased;
 use crate::traits::pool_availability::PoolAvailability;
 use serenity::framework::standard::{
   macros::{command, group},
-  CommandResult, StandardFramework,
+  CommandError, CommandResult, StandardFramework,
 };
 use serenity::prelude::{Context, EventHandler};
 
 #[command]
 pub fn add(ctx: &mut Context, msg: &Message) -> CommandResult {
-  let mut data = ctx.data.lock();
+  let mut data = ctx.data.write();
   let game = data.get_mut::<Game>().unwrap();
-  return update_members(game, msg, true);
+  update_members(game, msg, true)
 }
 
 pub fn update_members(
   game: &mut Game,
   msg: &Message,
   send_embed: bool,
-) -> Vec<User> {
+) -> Result<(), CommandError> {
   // The `send_embed` parameter exists only as a way to avoid trying to hit the
   // Discord API during testing.
   if game.phase != Some(Phases::PlayerRegistration) {
@@ -41,7 +41,7 @@ pub fn update_members(
     }
   }
   game.next_phase();
-  game.draft_pool.members()
+  Ok(())
 }
 
 #[cfg(test)]

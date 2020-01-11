@@ -6,7 +6,7 @@ use crate::traits::has_members::HasMembers;
 use crate::traits::phased::Phased;
 use serenity::framework::standard::{
   macros::{command, group},
-  Args, CommandResult, StandardFramework,
+  Args, CommandError, CommandResult, StandardFramework,
 };
 use serenity::model::channel::Message;
 use serenity::prelude::{Context, EventHandler};
@@ -14,9 +14,9 @@ use serenity::prelude::{Context, EventHandler};
 #[command]
 pub fn pick(ctx: &mut Context, msg: &Message, args: Args) -> CommandResult {
   let user_index = args.single::<usize>().unwrap();
-  let mut data = ctx.data.lock();
+  let mut data = ctx.data.write();
   let game = data.get_mut::<Game>().unwrap();
-  return draft_player(game, msg, true, user_index)?;
+  draft_player(game, msg, true, user_index)
 }
 
 pub fn draft_player(
@@ -24,11 +24,11 @@ pub fn draft_player(
   msg: &Message,
   send_embed: bool,
   user_index: usize,
-) -> Result<(), &'static str> {
+) -> Result<(), CommandError> {
   if game.phase != Some(Phases::PlayerDrafting) && send_embed {
     let err = "We're not drafting right now!";
     consume_message(msg, error_embed(err));
-    return Err(err);
+    return Err(CommandError::from(err));
   }
 
   if let Some(user) = game.draft_pool.pop_available_player(&user_index) {
@@ -40,7 +40,7 @@ pub fn draft_player(
     if send_embed {
       consume_message(msg, error_embed(err));
     }
-    return Err(err);
+    return Err(CommandError::from(err));
   }
 
   game.next_phase();

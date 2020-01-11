@@ -25,7 +25,8 @@
           }
         ]
       }
-    }
+    },
+    "rust-client.channel": "nightly"
   },
   "extensions": {
     "recommendations": [
