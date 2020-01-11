@@ -1,9 +1,9 @@
+use crate::models::game_title::GameTitle;
 use crate::schema::*;
 use diesel::dsl::Eq;
 use diesel::pg::Pg;
 use diesel::prelude::{Insertable, Queryable};
 use diesel::ExpressionMethods;
-use crate::models::game_title::GameTitle;
 
 #[primary_key(game_mode_id)]
 #[table_name = "game_modes"]
