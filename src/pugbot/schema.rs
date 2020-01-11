@@ -42,7 +42,15 @@ table! {
     }
 }
 
-joinable!(user_ratings -> users (user_id));
 joinable!(game_modes -> game_titles (game_title_id));
-joinable!(user_ratings -> game_modes (game_mode_id));
 joinable!(maps -> game_titles (game_title_id));
+joinable!(user_ratings -> game_modes (game_mode_id));
+joinable!(user_ratings -> users (user_id));
+
+// allow_tables_to_appear_in_same_query!(
+//     game_modes,
+//     game_titles,
+//     maps,
+//     user_ratings,
+//     users,
+// );

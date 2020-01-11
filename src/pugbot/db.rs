@@ -13,7 +13,7 @@ use typemap::Key;
 use crate::models::map::Map as GameMap;
 use crate::models::user::DiscordUser;
 use crate::models::user_rating::UserRating;
-use crate::schema::user_ratings;
+use crate::schema::{ users, user_ratings};
 use crate::schema::users::dsl::*;
 use crate::schema::*;
 
@@ -82,7 +82,7 @@ pub fn select_maps_for_mode_id(
   conn: r2d2::PooledConnection<ConnectionManager<PgConnection>>,
   mode_id: i32,
 ) -> Vec<GameMap> {
-  allow_tables_to_appear_in_same_query!(game_titles, game_modes, maps);
+  allow_tables_to_appear_in_same_query!(game_modes, game_titles, maps, user_ratings, users);
   no_arg_sql_function!(RANDOM, (), "Represents the sql RANDOM() function");
   maps::table
     .inner_join(game_modes::table.on(game_modes::game_mode_id.eq(mode_id)))
