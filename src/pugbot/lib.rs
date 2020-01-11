@@ -23,6 +23,10 @@ use crate::models::game::Game;
 // use glicko2::{new_rating, GameResult, Glicko2Rating};
 use serenity::builder::CreateEmbed;
 use serenity::framework::standard::help_commands;
+use serenity::framework::standard::{
+  macros::{command, group},
+  CommandResult, StandardFramework,
+};
 use serenity::framework::StandardFramework;
 use serenity::http;
 use serenity::model::channel::{Embed, Message};

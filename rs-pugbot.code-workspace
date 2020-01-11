@@ -1,9 +1,4 @@
 {
-  "folders": [
-    {
-      "path": "."
-    }
-  ],
   "settings": {
     "editor.formatOnSave": true,
     "editor.tokenColorCustomizations": {
@@ -12,7 +7,7 @@
           {
             "scope": "support.constant.core.rust",
             "settings": {
-              "foreground": "#91b18a",
+              "foreground": "#91b18a"
             }
           },
           {
@@ -27,7 +22,7 @@
               "foreground": "#b1948a",
               "fontStyle": "italic"
             }
-          },
+          }
         ]
       }
     }
@@ -38,5 +33,10 @@
       "serayuzgur.crates",
       "bungcip.better-toml"
     ]
-  }
+  },
+  "folders": [
+    {
+      "path": "."
+    }
+  ]
 }
