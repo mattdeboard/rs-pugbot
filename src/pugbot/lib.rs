@@ -26,12 +26,9 @@ use crate::models::game::Game;
 // use glicko2::{new_rating, GameResult, Glicko2Rating};
 use serenity::builder::CreateEmbed;
 use serenity::framework::standard::{
-  help_commands,
-  macros::{check, command, group, help},
-  Args, CheckResult, CommandGroup, CommandOptions, CommandResult,
-  DispatchError, HelpOptions, StandardFramework,
+  help_commands, macros::help, Args, CommandGroup, CommandResult, HelpOptions,
+  StandardFramework,
 };
-
 use serenity::http::raw::Http;
 use serenity::model::channel::{Embed, Message};
 use serenity::model::event::ResumedEvent;
@@ -210,25 +207,6 @@ Once enough people to fill out all the teams have added themselves, captains wil
   );
   client.start();
 }
-
-pub fn consume_message(msg: &Message, embed: Embed) {
-  msg
-    .channel_id
-    .send_message(|m| m.embed(|_| CreateEmbed::from(embed)))
-    .unwrap();
-}
-
-// fn bot_owners() -> HashSet<UserId> {
-//   let http = Http {};
-//   match http.get_current_application_info() {
-//     Ok(info) => {
-//       let mut set = HashSet::new();
-//       set.insert(info.owner.id);
-//       set
-//     }
-//     Err(why) => panic!("Couldn't get application info: {:?}", why),
-//   }
-// }
 
 // pub fn new_rating_from_outcome(
 //   original_rating: Glicko2Rating,

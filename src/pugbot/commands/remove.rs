@@ -1,31 +1,32 @@
-use crate::consume_message;
 use crate::models::game::Game;
 use crate::traits::has_members::HasMembers;
 use serenity::framework::standard::{
-  macros::{command, group},
-  CommandError, CommandResult, StandardFramework,
+  macros::command, CommandError, CommandResult,
 };
 use serenity::model::channel::Message;
-use serenity::model::user::User;
-use serenity::prelude::{Context, EventHandler};
+use serenity::prelude::Context;
 
 #[command]
 pub fn remove(ctx: &mut Context, msg: &Message) -> CommandResult {
   let mut data = ctx.data.write();
   let mut game = data.get_mut::<Game>().unwrap();
-  return remove_member(game, msg, true);
+  return remove_member(ctx, game, msg, true);
 }
 
 pub fn remove_member(
+  ctx: &mut Context,
   game: &mut Game,
   msg: &Message,
   send_embed: bool,
 ) -> Result<(), CommandError> {
   let author = msg.author.clone();
-  if let Some(embed) = game.draft_pool.remove_member(author) {
-    if send_embed {
-      consume_message(msg, embed)
-    }
+  game.draft_pool.remove_member(author);
+  if send_embed {
+    msg.channel_id.send_message(&ctx.http, |m| {
+      m.embed(|e| e);
+      m
+    });
+    // consume_message(msg, embed)
   }
   Ok(())
 }

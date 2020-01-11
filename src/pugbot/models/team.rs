@@ -23,10 +23,10 @@ impl HasMembers for Team {
     self.members.clone()
   }
 
-  fn add_member(&mut self, user: User) -> Option<Embed> {
+  fn add_member(&mut self, user: User) {
     self.members.push(user);
     self.members.dedup();
-    self.members_changed_embed(255, 223, 165)
+    // self.members_changed_embed(255, 223, 165)
   }
 
   fn remove_member(&mut self, user: User) -> Option<Embed> {

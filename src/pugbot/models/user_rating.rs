@@ -1,4 +1,4 @@
-use crate::models::user::DiscordUser as User;
+use crate::models::{game_mode::GameMode, user::DiscordUser as User};
 use crate::schema::*;
 use bigdecimal::BigDecimal;
 

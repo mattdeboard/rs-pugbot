@@ -1,13 +1,11 @@
 use crate::commands::error_embed;
-use crate::consume_message;
 use crate::models::game::{Game, Phases};
 use crate::traits::phased::Phased;
 use serenity::framework::standard::{
-  macros::{command, group},
-  Args, CommandError, CommandResult, StandardFramework,
+  macros::command, Args, CommandError, CommandResult,
 };
 use serenity::model::channel::Message;
-use serenity::prelude::{Context, EventHandler};
+use serenity::prelude::Context;
 
 #[command]
 pub fn mapvote(ctx: &mut Context, msg: &Message, args: Args) -> CommandResult {
@@ -28,7 +26,7 @@ pub fn map_vote(
     let err = "We're not picking maps right now!";
 
     if send_embed {
-      consume_message(msg, error_embed(err));
+      // consume_message(msg, error_embed(err));
     }
 
     return Err(CommandError::from(err));
@@ -46,7 +44,7 @@ pub fn map_vote(
         println!("Error sending message: {:?}", why);
         let err = "Had some kind of problem sending you a message.";
         msg.reply(&ctx, err);
-        consume_message(msg, error_embed(err));
+        // consume_message(msg, error_embed(err));
         Err(CommandError::from(err))
       }
     }
@@ -57,14 +55,14 @@ pub fn map_vote(
       game.next_phase();
 
       if game.phase == Some(Phases::ResultRecording) && send_embed {
-        consume_message(msg, game.map_winner_embed(164, 255, 241).unwrap());
+        // consume_message(msg, game.map_winner_embed(164, 255, 241).unwrap());
       }
       Ok(())
     } else {
       let err = "Invalid map selection.";
 
       if send_embed {
-        consume_message(msg, error_embed(err));
+        // consume_message(msg, error_embed(err));
       }
 
       Err(CommandError::from(err))
