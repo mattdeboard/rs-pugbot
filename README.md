@@ -9,9 +9,7 @@ These are covered in detail in `MILESTONES.md`
 
 # Installation
 
-Make sure you're running Rust nightly builds. [These
-instructions](https://github.com/rust-lang-nursery/rustup.rs#working-with-nightly-rust)
-will help.
+Make sure you're running Rust 1.39.
 
 You will need a database up and running. I recommend PostgreSQL.
 
