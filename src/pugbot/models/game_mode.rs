@@ -7,7 +7,7 @@ use diesel::ExpressionMethods;
 
 #[primary_key(game_mode_id)]
 #[table_name = "game_modes"]
-#[belongs_to(GameTitle)]
+#[belongs_to(GameTitle, foreign_key = "game_title_id")]
 #[derive(Debug, Associations, Identifiable)]
 pub struct GameMode {
   pub game_mode_id: i32,

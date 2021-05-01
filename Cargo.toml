@@ -2,7 +2,6 @@
 name = "pugbot"
 version = "0.1.0"
 authors = ["Matt DeBoard <mdeboard@truecar.com>"]
-features = [ "const_fn" ]
 edition = "2018"
 
 [lib]
@@ -15,11 +14,19 @@ path = "src/main.rs"
 test = false
 
 [dependencies]
-bigdecimal = "*"
-diesel = { version = "1.1.1", features = ["chrono", "postgres", "serde_json", "64-column-tables", "numeric", "uuid"] }
+bigdecimal = { version = ">= 0.0.10, < 0.2.0" }
+diesel = { version = "1.4.6", features = [
+  "64-column-tables",
+  "bigdecimal",
+  "chrono",
+  "numeric",
+  "postgres",
+  "serde_json",
+  "uuid",
+] }
 # diesel_cli must be installed via the following command:
 # cargo install diesel_cli --no-default-features --features postgres
-diesel_migrations = "1.1.0"
+diesel_migrations = "1.4.0"
 env_logger = "~0.4"
 glicko2 = "*"
 kankyo = "~0.1"
