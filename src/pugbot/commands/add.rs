@@ -1,3 +1,4 @@
+use serenity::framework::standard::macros::command;
 use serenity::model::channel::Message;
 use serenity::model::user::User;
 
@@ -6,12 +7,18 @@ use crate::models::game::{Game, Phases};
 use crate::traits::has_members::HasMembers;
 use crate::traits::phased::Phased;
 use crate::traits::pool_availability::PoolAvailability;
+use serenity::framework::standard::CommandResult;
+use serenity::prelude::Context;
 
-command!(add(ctx, msg) {
+// FIXME: Fill in the details for these attributes:
+//  <https://docs.rs/serenity/0.10.5/serenity/framework/standard/macros/attr.command.html#options>
+#[command]
+pub(crate) async fn add(ctx: &Context, msg: &Message) -> CommandResult {
   let mut data = ctx.data.lock();
   let game = data.get_mut::<Game>().unwrap();
-  update_members(game, msg, true);
-});
+  update_members(game, msg, true); // XXX: should this be the return value?
+  Ok(())
+}
 
 pub fn update_members(
   game: &mut Game,
