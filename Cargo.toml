@@ -4,9 +4,6 @@ version = "0.1.0"
 authors = ["Matt DeBoard <mdeboard@truecar.com>"]
 edition = "2018"
 
-[features]
-const_fn = []
-
 [lib]
 name = "pugbot"
 path = "src/pugbot/lib.rs"
