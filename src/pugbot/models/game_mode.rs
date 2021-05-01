@@ -1,3 +1,4 @@
+use crate::models::game_title::GameTitle;
 use crate::schema::*;
 use diesel::dsl::Eq;
 use diesel::pg::Pg;
@@ -6,7 +7,7 @@ use diesel::ExpressionMethods;
 
 #[primary_key(game_mode_id)]
 #[table_name = "game_modes"]
-#[belongs_to(game_titles)]
+#[belongs_to(GameTitle, foreign_key = "game_title_id")]
 #[derive(Debug, Associations)]
 pub struct GameMode {
   pub game_mode_id: i32,
