@@ -9,7 +9,25 @@ use serenity::framework::standard::{Args, CommandResult};
 use serenity::model::channel::Message;
 use serenity::prelude::Context;
 
+// FIXME: look at the `#[allow_roles()]` attr to restrict this to captains.
 #[command]
+#[aliases("p")]
+#[description(r#"(Captains Only) `pick #` adds player `#` to your team.
+
+Once enough players to fill out all the teams have added themselves, captains will be automatically selected at random. One captain will be selected per team.
+
+The bot will then display a numbered list of players, like so:
+
+```
+  Index     Player Name
+----------|-------------
+    1     | Alice
+    2     | Bob
+    3     | Charlie
+```
+
+Captains will be able to use the `~pick <index>` command."#
+)]
 pub(crate) async fn pick(
   ctx: &Context,
   msg: &Message,

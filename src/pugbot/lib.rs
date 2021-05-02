@@ -20,7 +20,6 @@ use crate::models::game::Game;
 // use crate::models::team::Team;
 // use glicko2::{new_rating, GameResult, Glicko2Rating};
 use serenity::builder::CreateEmbed;
-use serenity::framework::standard::help_commands;
 use serenity::framework::StandardFramework;
 use serenity::http;
 use serenity::model::channel::{Embed, Message};
@@ -46,12 +45,13 @@ macro_rules! struct_from_json {
 
 struct Handler;
 
+#[serenity::async_trait]
 impl EventHandler for Handler {
-  fn ready(&self, _: Context, ready: Ready) {
+  async fn ready(&self, _: Context, ready: Ready) {
     info!("Connected as {}", ready.user.name);
   }
 
-  fn resume(&self, _: Context, _: ResumedEvent) {
+  async fn resume(&self, _: Context, _: ResumedEvent) {
     info!("Resumed");
   }
 }
@@ -96,12 +96,23 @@ fn queue_size() -> u32 {
   team_count() * team_size()
 }
 
-#[allow(unused_must_use)]
-pub fn client_setup() {
+pub async fn client_setup() {
   env_logger::init().expect("Failed to initialize env_logger");
   let token =
     env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
-  let mut client = Client::new(&token, Handler).expect("Err creating client");
+
+  let framework = StandardFramework::new()
+    .configure(|c| c.owners(bot_owners(&token)).prefix("~"))
+    .help(&commands::HELP_CMD)
+    .group(&commands::MAPVOTING_GROUP)
+    .group(&commands::PLAYERDRAFTING_GROUP)
+    .group(&commands::PLAYERREGISTRATION_GROUP);
+
+  let mut client = Client::builder(&token)
+    .event_handler(Handler)
+    .framework(framework)
+    .await
+    .expect("Err creating client");
 
   {
     let mut data = client.data.lock();
@@ -121,57 +132,7 @@ pub fn client_setup() {
     data.insert::<db::Pool>(db_pool);
   }
 
-  client.with_framework(
-    StandardFramework::new()
-      .configure(|c| c.owners(bot_owners()).prefix("~"))
-      .help(help_commands::with_embeds)
-      .group("Map Voting", |g| {
-        g.command("vote", |c| {
-          c.desc("Records your vote for map selection")
-            .cmd(commands::mapvote::mapvote)
-            .batch_known_as(vec!["v", "mv"])
-        })
-      })
-      .group("Player Drafting", |g| {
-        g.desc("Commands here are available to Captains only")
-          .command("pick", |c| {
-            c.desc("(Captains Only) `pick #` adds player `#` to your team.
-
-Once enough players to fill out all the teams have added themselves, captains will be automatically selected at random. One captain will be selected per team.
-
-The bot will then display a numbered list of players, like so:
-
-```
-  Index     Player Name
-----------|-------------
-    1     | Alice
-    2     | Bob
-    3     | Charlie
-```
-
-Captains will be able to use the `~pick <index>` command.")
-              .cmd(commands::pick::pick)
-              .batch_known_as(vec!["p"])
-          })
-      })
-      .group("Player Registration", |g| {
-        g.command("add", |c| {
-          c.desc(
-            "Adds yourself to the pool of draftable players, or \"draft pool.\"
-
-Once enough people to fill out all the teams have added themselves, captains will be automatically selected at random, and drafting will begin.",
-          )
-          .cmd(commands::add::add)
-          .batch_known_as(vec!["a"])
-        })
-        .command("remove", |c| {
-          c.desc("Removes yourself from the draft pool.")
-            .cmd(commands::remove::remove)
-            .batch_known_as(vec!["r"])
-        })
-      }),
-  );
-  client.start();
+  client.start().await.unwrap(); // FIXME: should the return be a Result?
 }
 
 pub fn consume_message(msg: &Message, embed: Embed) {
@@ -181,8 +142,9 @@ pub fn consume_message(msg: &Message, embed: Embed) {
     .unwrap();
 }
 
-fn bot_owners() -> HashSet<UserId> {
-  match http::get_current_application_info() {
+fn bot_owners(token: &str) -> HashSet<UserId> {
+  let client = http::client::Http::new_with_token(token); // XXX: maybe retain this client higher in the call stack?
+  match client.get_current_application_info() {
     Ok(info) => {
       let mut set = HashSet::new();
       set.insert(info.owner.id);

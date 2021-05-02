@@ -8,6 +8,8 @@ use serenity::model::user::User;
 use serenity::prelude::Context;
 
 #[command]
+#[aliases("r")]
+#[description("Removes yourself from the draft pool.")]
 pub(crate) async fn remove(ctx: &Context, msg: &Message) -> CommandResult {
   let mut data = ctx.data.lock();
   let mut game = data.get_mut::<Game>().unwrap();
