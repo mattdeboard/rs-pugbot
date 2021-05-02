@@ -10,9 +10,12 @@ use crate::traits::pool_availability::PoolAvailability;
 use serenity::framework::standard::CommandResult;
 use serenity::prelude::Context;
 
-// FIXME: Fill in the details for these attributes:
-//  <https://docs.rs/serenity/0.10.5/serenity/framework/standard/macros/attr.command.html#options>
 #[command]
+#[aliases("a")]
+#[description(r#"Adds yourself to the pool of draftable players, or "draft pool."
+
+Once enough people to fill out all the teams have added themselves, captains will be automatically selected at random, and drafting will begin."#
+)]
 pub(crate) async fn add(ctx: &Context, msg: &Message) -> CommandResult {
   let mut data = ctx.data.lock();
   let game = data.get_mut::<Game>().unwrap();

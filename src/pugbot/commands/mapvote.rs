@@ -8,6 +8,8 @@ use serenity::model::channel::Message;
 use serenity::prelude::Context;
 
 #[command]
+#[aliases("v", "mv")]
+#[description("Records your vote for map selection")]
 pub(crate) async fn mapvote(
   ctx: &Context,
   msg: &Message,
