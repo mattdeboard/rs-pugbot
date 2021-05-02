@@ -4,7 +4,7 @@ use crate::models::team::Team;
 use crate::team_id_range;
 use crate::traits::has_members::HasMembers;
 use crate::traits::phased::Phased;
-use rand::{thread_rng, Rng};
+use rand::{prelude::SliceRandom, thread_rng};
 use serenity::model::channel::Embed;
 use serenity::model::id::UserId;
 use serenity::utils::Colour;
@@ -86,7 +86,7 @@ impl Game {
       .map(|i| {
         let pool = self.draft_pool.available_players.clone();
         let keys: Vec<&usize> = pool.keys().collect();
-        let random_key: &usize = rng.choose(&[keys]).unwrap().first().unwrap();
+        let random_key: &usize = keys.choose(&mut rng).unwrap();
 
         if let Some(user) = self.draft_pool.pop_available_player(random_key) {
           Some(Team {

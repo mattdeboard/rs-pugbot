@@ -13,9 +13,9 @@ use typemap::Key;
 use crate::models::map::Map as GameMap;
 use crate::models::user::DiscordUser;
 use crate::models::user_rating::UserRating;
+use crate::schema::user_ratings;
 use crate::schema::users::dsl::*;
 use crate::schema::*;
-use crate::schema::{user_ratings, users};
 
 // Connection request guard type: a wrapper around an r2d2 pooled connection.
 pub struct DbConn(pub r2d2::PooledConnection<ConnectionManager<PgConnection>>);
