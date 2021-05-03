@@ -753,7 +753,7 @@ dependencies = [
  "env_logger",
  "glicko2",
  "kankyo",
- "log 0.3.9",
+ "log 0.4.14",
  "num",
  "r2d2",
  "r2d2-diesel",
