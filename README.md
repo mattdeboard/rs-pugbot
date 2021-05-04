@@ -66,10 +66,4 @@ I welcome contributions from fellow newbs and salty experts alike. Please see
 the GitHub issues for open tasks.
 
 ## License
-Copyright Matt DeBoard & contributors.
-
-Licensed under either of
-
-* Apache License, Version 2.0, (LICENSE-APACHE or https://www.apache.org/licenses/LICENSE-2.0)
-* MIT license (LICENSE-MIT or https://opensource.org/licenses/MIT)
-at your option.
+Licensed under MIT license ([LICENSE](https://github.com/mattdeboard/rs-pugbot/blob/main/LICENSE) or https://opensource.org/licenses/MIT)
