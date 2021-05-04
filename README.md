@@ -1,4 +1,4 @@
-# PugBot
+# 🦀 PugBot 🦀
 
 ## Overview
 
