@@ -5,9 +5,9 @@ use crate::team_id_range;
 use crate::traits::has_members::HasMembers;
 use crate::traits::phased::Phased;
 use rand::{prelude::SliceRandom, thread_rng};
-use serenity::model::channel::Embed;
 use serenity::model::id::UserId;
 use serenity::utils::Colour;
+use serenity::{model::channel::Embed, prelude::TypeMapKey};
 use std::collections::HashMap;
 use std::iter::Cycle;
 use std::ops::Range;
@@ -26,6 +26,12 @@ pub struct Game {
   pub teams: Vec<Team>,
   pub turn_number: usize,
   pub turn_taker: Cycle<Range<u32>>,
+}
+
+pub struct GameContainer;
+
+impl TypeMapKey for GameContainer {
+  type Value = Game;
 }
 
 #[derive(PartialEq, Debug)]

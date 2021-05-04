@@ -1,7 +1,7 @@
-use crate::commands::error_embed;
 use crate::consume_message;
 use crate::models::game::{Game, Phases};
 use crate::traits::phased::Phased;
+use crate::{commands::error_embed, models::game::GameContainer};
 use serenity::framework::standard::macros::command;
 use serenity::framework::standard::{Args, CommandResult};
 use serenity::model::channel::Message;
@@ -15,8 +15,8 @@ pub(crate) async fn mapvote(
   msg: &Message,
   mut args: Args,
 ) -> CommandResult {
-  let mut data = ctx.data.lock();
-  let game = data.get_mut::<Game>().unwrap();
+  let mut data = ctx.data.write().await;
+  let game = data.get_mut::<GameContainer>().unwrap();
   map_vote(game, msg, true, args.single::<usize>()? as i32)?;
   Ok(())
 }

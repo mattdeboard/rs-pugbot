@@ -9,7 +9,7 @@ use serenity::model::user::User;
 
 #[derive(Debug)]
 pub struct DiscordUser {
-  pub database_id: Option<i32>,
+  pub id: UserId,
   pub discord_user_id: UserId,
   pub bot: bool,
   pub discriminator: u16,

@@ -1,5 +1,5 @@
-use crate::consume_message;
 use crate::models::game::{Game, Phases};
+use crate::{consume_message, models::game::GameContainer};
 
 use crate::commands::error_embed;
 use crate::traits::has_members::HasMembers;
@@ -34,8 +34,8 @@ pub(crate) async fn pick(
   mut args: Args,
 ) -> CommandResult {
   let user_index = args.single::<usize>().unwrap();
-  let mut data = ctx.data.lock();
-  let game = data.get_mut::<Game>().unwrap();
+  let mut data = ctx.data.write().await;
+  let game = data.get_mut::<GameContainer>().unwrap();
   draft_player(game, msg, true, user_index)?;
   Ok(())
 }

@@ -9,6 +9,7 @@ extern crate serde_derive;
 use env_logger;
 use kankyo;
 
+pub mod command_groups;
 pub mod commands;
 pub mod db;
 pub mod models;
@@ -16,7 +17,7 @@ pub mod schema;
 pub mod traits;
 
 use crate::models::draft_pool::DraftPool;
-use crate::models::game::Game;
+use crate::models::game::{Game, GameContainer};
 // use crate::models::team::Team;
 // use glicko2::{new_rating, GameResult, Glicko2Rating};
 use serenity::builder::CreateEmbed;
@@ -115,7 +116,7 @@ pub async fn client_setup() {
     .expect("Err creating client");
 
   {
-    let mut data = client.data.lock();
+    let mut data = client.data.write().await;
     let draft_pool = DraftPool::new(Vec::new(), team_count() * team_size());
     let db_pool = db::init_pool(None);
     let conn = db_pool.get().unwrap();
@@ -128,7 +129,7 @@ pub async fn client_setup() {
       team_count(),
       team_size(),
     );
-    data.insert::<Game>(game);
+    data.insert::<GameContainer>(game);
     data.insert::<db::Pool>(db_pool);
   }
 
