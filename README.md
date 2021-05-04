@@ -64,3 +64,6 @@ Finally, run `cargo test`.
 Contributions from all skill levels welcome! I'm learning Rust as I go here so
 I welcome contributions from fellow newbs and salty experts alike. Please see
 the GitHub issues for open tasks.
+
+## License
+Licensed under MIT license ([LICENSE](https://github.com/mattdeboard/rs-pugbot/blob/main/LICENSE) or https://opensource.org/licenses/MIT)
