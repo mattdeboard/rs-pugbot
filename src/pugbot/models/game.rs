@@ -5,8 +5,8 @@ use crate::team_id_range;
 use crate::traits::has_members::HasMembers;
 use crate::traits::phased::Phased;
 use rand::{prelude::SliceRandom, thread_rng};
-use serenity::model::id::UserId;
 use serenity::utils::Colour;
+use serenity::{builder::CreateEmbed, model::id::UserId};
 use serenity::{model::channel::Embed, prelude::TypeMapKey};
 use std::collections::HashMap;
 use std::iter::Cycle;
@@ -156,23 +156,33 @@ impl Game {
     self.eligible_voter_ids.retain(|&id| id != user_id);
   }
 
-  pub fn map_winner_embed(&self, r: u8, g: u8, b: u8) -> Option<Embed> {
+  pub fn map_winner_embed(
+    &self,
+    r: &'static u8,
+    g: &'static u8,
+    b: &'static u8,
+  ) -> &mut CreateEmbed {
+    let create_embed = CreateEmbed::default();
     let map_name = &self.active_map;
-    Some(Embed {
-      author: None,
-      colour: Colour::from_rgb(r, g, b),
-      description: Some(format!("The winning map is {:?}!", map_name)),
-      footer: None,
-      fields: Vec::new(),
-      image: None,
-      kind: "rich".to_string(),
-      provider: None,
-      thumbnail: None,
-      timestamp: None,
-      title: Some(format!("The winning map is {:?}!", map_name)),
-      url: None,
-      video: None,
-    })
+    create_embed.color(Colour::from_rgb(r, g, b));
+    create_embed.description(format!("The winning map is {:?}!", map_name));
+    create_embed.title(format!("The winning map is {:?}!", map_name));
+    &mut create_embed
+    //  Embed {
+    //   author: None,
+    //   colour: Colour::from_rgb(r, g, b),
+    //   description: Some(format!("The winning map is {:?}!", map_name)),
+    //   footer: None,
+    //   fields: Vec::new(),
+    //   image: None,
+    //   kind: "rich".to_string(),
+    //   provider: None,
+    //   thumbnail: None,
+    //   timestamp: None,
+    //   title: Some(format!("The winning map is {:?}!", map_name)),
+    //   url: None,
+    //   video: None,
+    // }
   }
 
   pub fn map_selection_embed(&self, r: u8, g: u8, b: u8) -> Option<Embed> {

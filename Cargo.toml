@@ -40,3 +40,7 @@ serde_derive = "^1.0"
 serde_json = "^1.0"
 serenity = "^0.10.5"
 typemap = "0.3"
+
+[dev-dependencies]
+tokio-test = "*"
+futures = "0.3"

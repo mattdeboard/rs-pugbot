@@ -34,21 +34,22 @@ pub(crate) async fn pick(
   mut args: Args,
 ) -> CommandResult {
   let user_index = args.single::<usize>().unwrap();
-  let mut data = ctx.data.write().await;
-  let game = data.get_mut::<GameContainer>().unwrap();
-  draft_player(game, msg, true, user_index)?;
+
+  draft_player(ctx, msg, true, user_index).await;
   Ok(())
 }
 
-pub fn draft_player(
-  game: &mut Game,
+pub async fn draft_player(
+  ctx: &Context,
   msg: &Message,
   send_embed: bool,
   user_index: usize,
 ) -> Result<(), &'static str> {
+  let mut data = ctx.data.write().await;
+  let game = data.get_mut::<GameContainer>().unwrap();
   if game.phase != Some(Phases::PlayerDrafting) && send_embed {
     let err = "We're not drafting right now!";
-    consume_message(msg, error_embed(err));
+    consume_message(ctx, msg, error_embed(err)).await;
     return Err(err);
   }
 
@@ -59,7 +60,7 @@ pub fn draft_player(
     let err =
       "The user selected for drafting has been drafted or is otherwise invalid";
     if send_embed {
-      consume_message(msg, error_embed(err));
+      consume_message(ctx, msg, error_embed(err));
     }
     return Err(err);
   }
@@ -67,8 +68,12 @@ pub fn draft_player(
   game.next_phase();
 
   if game.phase == Some(Phases::MapSelection) && send_embed {
-    consume_message(msg, game.drafting_complete_embed(165, 255, 241).unwrap());
-    consume_message(msg, game.map_selection_embed(164, 255, 241).unwrap());
+    consume_message(
+      ctx,
+      msg,
+      game.drafting_complete_embed(165, 255, 241).unwrap(),
+    );
+    consume_message(ctx, msg, game.map_selection_embed(164, 255, 241).unwrap());
   }
   Ok(())
 }

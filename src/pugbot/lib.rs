@@ -16,11 +16,15 @@ pub mod models;
 pub mod schema;
 pub mod traits;
 
+use crate::command_groups::{
+  map_voting::*, player_drafting::*, player_registration::*,
+};
 use crate::models::draft_pool::DraftPool;
 use crate::models::game::{Game, GameContainer};
+
 // use crate::models::team::Team;
 // use glicko2::{new_rating, GameResult, Glicko2Rating};
-use serenity::builder::CreateEmbed;
+use serenity::builder::{CreateEmbed, CreateMessage};
 use serenity::framework::StandardFramework;
 use serenity::http;
 use serenity::model::channel::{Embed, Message};
@@ -28,10 +32,10 @@ use serenity::model::event::ResumedEvent;
 use serenity::model::gateway::Ready;
 use serenity::model::id::UserId;
 use serenity::prelude::*;
-use std::collections::HashSet;
 use std::convert::From;
 use std::env;
 use std::ops::Range;
+use std::{borrow::Borrow, collections::HashSet};
 
 #[macro_export]
 macro_rules! struct_from_json {
@@ -101,13 +105,13 @@ pub async fn client_setup() {
   env_logger::init().expect("Failed to initialize env_logger");
   let token =
     env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
-
+  let owners = bot_owners(&token).await;
   let framework = StandardFramework::new()
-    .configure(|c| c.owners(bot_owners(&token)).prefix("~"))
+    .configure(|c| c.owners(owners).prefix("~"))
     .help(&commands::HELP_CMD)
-    .group(&commands::MAPVOTING_GROUP)
-    .group(&commands::PLAYERDRAFTING_GROUP)
-    .group(&commands::PLAYERREGISTRATION_GROUP);
+    .group(&MAPVOTING_GROUP)
+    .group(&PLAYERDRAFTING_GROUP)
+    .group(&PLAYERREGISTRATION_GROUP);
 
   let mut client = Client::builder(&token)
     .event_handler(Handler)
@@ -136,16 +140,21 @@ pub async fn client_setup() {
   client.start().await.unwrap(); // FIXME: should the return be a Result?
 }
 
-pub fn consume_message(msg: &Message, embed: Embed) {
+pub async fn consume_message<'a, F>(
+  ctx: &'a Context,
+  msg: &Message,
+  create_embed: F,
+) where
+  F: FnOnce(&mut CreateEmbed) -> &mut CreateEmbed,
+{
   msg
     .channel_id
-    .send_message(|m| m.embed(|_| CreateEmbed::from(embed)))
-    .unwrap();
+    .send_message(&ctx.http, |m| m.embed(create_embed));
 }
 
-fn bot_owners(token: &str) -> HashSet<UserId> {
+async fn bot_owners(token: &str) -> HashSet<UserId> {
   let client = http::client::Http::new_with_token(token); // XXX: maybe retain this client higher in the call stack?
-  match client.get_current_application_info() {
+  match client.get_current_application_info().await {
     Ok(info) => {
       let mut set = HashSet::new();
       set.insert(info.owner.id);
