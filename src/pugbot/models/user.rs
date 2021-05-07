@@ -36,24 +36,12 @@ impl<'a> Insertable<users::table> for &'a User {
   }
 }
 
-impl From<DiscordUser> for User {
-  fn from(discord_user: DiscordUser) -> User {
-    User {
-      id: discord_user.discord_user_id,
-      bot: discord_user.bot,
-      discriminator: discord_user.discriminator,
-      name: discord_user.name,
-      avatar: discord_user.avatar,
-    }
-  }
-}
-
 impl Queryable<users::SqlType, Pg> for DiscordUser {
   type Row = (i32, bool, i32, String, i32);
 
   fn build((id, bot, discriminator, name, discord_user_id): Self::Row) -> Self {
     DiscordUser {
-      database_id: Some(id),
+      id: UserId(id as u64),
       bot,
       name,
       discriminator: discriminator as u16,
@@ -67,7 +55,7 @@ impl From<DiscordUser> for UserRating {
   fn from(record: DiscordUser) -> UserRating {
     UserRating {
       id: None,
-      user_id: record.database_id.unwrap(),
+      user_id: *record.id.as_u64() as i32,
       rating: None,
       deviation: None,
       volatility: None,

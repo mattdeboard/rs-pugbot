@@ -1,11 +1,13 @@
-use crate::consume_message;
+use crate::models::game::GameContainer;
 use crate::models::game::Phases;
 use crate::traits::phased::Phased;
-use crate::{commands::error_embed, models::game::GameContainer};
-use serenity::framework::standard::macros::command;
-use serenity::framework::standard::{Args, CommandResult};
 use serenity::model::channel::Message;
 use serenity::prelude::Context;
+use serenity::{framework::standard::macros::command, utils::Colour};
+use serenity::{
+  framework::standard::{Args, CommandResult},
+  utils::Color,
+};
 
 #[command]
 #[aliases("v", "mv")]
@@ -28,11 +30,19 @@ pub async fn map_vote(
 ) -> Result<(), &'static str> {
   let mut data = ctx.data.write().await;
   let game = data.get_mut::<GameContainer>().unwrap();
+  let embed_color = Colour::from_rgb(255, 0, 0);
+
   if game.phase != Some(Phases::MapSelection) {
     let err = "We're not picking maps right now!";
 
     if send_embed {
-      consume_message(ctx, msg, |_| error_embed(err));
+      msg.channel_id.send_message(&ctx.http, |m| {
+        m.embed(|create_embed| {
+          create_embed.color(embed_color);
+          create_embed.description(String::from(err));
+          create_embed.title(String::from("ERROR"))
+        })
+      });
     }
 
     return Err(err);
@@ -50,7 +60,6 @@ pub async fn map_vote(
         println!("Error sending message: {:?}", why);
         let err = "Had some kind of problem sending you a message.";
         msg.reply(&ctx.http, err);
-        consume_message(ctx, msg, |_| error_embed(err));
         Err(err)
       }
     }
@@ -59,16 +68,33 @@ pub async fn map_vote(
       game.map_votes.insert(map_index, vote_count + 1);
       game.register_vote(msg.author.id);
       game.next_phase();
-
+      let embed_color = Color::from_rgb(164, 255, 241);
       if game.phase == Some(Phases::ResultRecording) && send_embed {
-        consume_message(ctx, msg, |_| game.map_winner_embed(&164, &255, &241));
+        msg.channel_id.send_message(&ctx.http, |m| {
+          m.embed(|create_embed| {
+            create_embed.color(embed_color);
+            create_embed.description(format!(
+              "The winning map is {:?}!",
+              game.active_map
+            ));
+            create_embed
+              .title(format!("The winning map is {:?}!", game.active_map))
+          })
+        });
+        // consume_message(ctx, msg, |_| game.map_winner_embed(&164, &255, &241));
       }
       Ok(())
     } else {
       let err = "Invalid map selection.";
 
       if send_embed {
-        consume_message(ctx, msg, |_| error_embed(err));
+        msg.channel_id.send_message(&ctx.http, |m| {
+          m.embed(|create_embed| {
+            create_embed.color(embed_color);
+            create_embed.description(String::from(err));
+            create_embed.title(String::from("ERROR"))
+          })
+        });
       }
 
       Err(err)

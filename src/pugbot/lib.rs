@@ -24,18 +24,16 @@ use crate::models::game::{Game, GameContainer};
 
 // use crate::models::team::Team;
 // use glicko2::{new_rating, GameResult, Glicko2Rating};
-use serenity::builder::{CreateEmbed, CreateMessage};
+use serenity::builder::CreateEmbed;
 use serenity::framework::StandardFramework;
 use serenity::http;
-use serenity::model::channel::{Embed, Message};
+use serenity::model::channel::Message;
 use serenity::model::event::ResumedEvent;
 use serenity::model::gateway::Ready;
 use serenity::model::id::UserId;
 use serenity::prelude::*;
-use std::convert::From;
-use std::env;
+use std::collections::HashSet;
 use std::ops::Range;
-use std::{borrow::Borrow, collections::HashSet};
 
 #[macro_export]
 macro_rules! struct_from_json {
@@ -64,7 +62,7 @@ impl EventHandler for Handler {
 fn team_size() -> u32 {
   kankyo::load().expect("Failed to load .env file");
 
-  match env::var("TEAM_SIZE") {
+  match std::env::var("TEAM_SIZE") {
     Ok(size) => {
       if let Ok(s) = size.parse::<u32>() {
         s
@@ -103,8 +101,8 @@ fn queue_size() -> u32 {
 
 pub async fn client_setup() {
   env_logger::init().expect("Failed to initialize env_logger");
-  let token =
-    env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
+  let token = std::env::var("DISCORD_TOKEN")
+    .expect("Expected a token in the environment");
   let owners = bot_owners(&token).await;
   let framework = StandardFramework::new()
     .configure(|c| c.owners(owners).prefix("~"))

@@ -1,12 +1,12 @@
-use serenity::framework::standard::macros::command;
 use serenity::model::channel::Message;
 use serenity::model::user::User;
+use serenity::{framework::standard::macros::command, utils::Colour};
 
-use crate::models::game::Phases;
 use crate::traits::has_members::HasMembers;
 use crate::traits::phased::Phased;
-use crate::traits::pool_availability::PoolAvailability;
-use crate::{consume_message, models::game::GameContainer};
+
+use crate::models::game::GameContainer;
+use crate::{models::game::Phases, queue_size};
 use serenity::framework::standard::CommandResult;
 use serenity::prelude::Context;
 
@@ -28,22 +28,60 @@ pub async fn update_members(
 ) -> Vec<User> {
   let mut data = ctx.data.write().await;
   let game = data.get_mut::<GameContainer>().unwrap();
-  // The `send_embed` parameter exists only as a way to avoid trying to hit the
-  // Discord API during testing.
-  if game.phase != Some(Phases::PlayerRegistration) {
-    if let Some(embed) = game.draft_pool.members_full_embed(165, 255, 241) {
-      if send_embed {
-        consume_message(ctx, msg, embed);
+  let embed_descrip: String = game
+    .draft_pool
+    .members
+    .clone()
+    .into_iter()
+    .map(|m| m.clone().name)
+    .collect();
+  let embed_color = Colour::from_rgb(165, 255, 241);
+  let author = msg.author.clone();
+  if send_embed {
+    if game.phase == Some(Phases::PlayerRegistration) {
+      match game.draft_pool.add_member(author) {
+        Ok(_) => {
+          msg.channel_id.send_message(&ctx.http, |m| {
+            m.embed(|e| {
+              e.color(embed_color);
+              e.description(embed_descrip);
+              e.footer(|f| {
+                f.text(format!(
+                  "{} of {} users in queue",
+                  game.draft_pool.members.len(),
+                  queue_size()
+                ))
+              })
+            })
+          });
+        }
+        Err(_) => {
+          msg.channel_id.send_message(&ctx.http, |m| {
+            m.embed(|e| {
+              e.color(embed_color);
+              e.description(embed_descrip);
+              e.footer(|f| {
+                f.text(format!("The queue is full! Now picking captains!"))
+              });
+              e.title("Members in queue:".to_string())
+            })
+          });
+        }
       }
-    }
-  } else {
-    let author = msg.author.clone();
-    if let Some(embed) = game.draft_pool.add_member(author) {
-      if send_embed {
-        consume_message(ctx, msg, embed);
-      }
+    } else {
+      msg.channel_id.send_message(&ctx.http, |m| {
+        m.embed(|e| {
+          e.color(embed_color);
+          e.description(embed_descrip);
+          e.footer(|f| {
+            f.text(format!("The queue is full! Now picking captains!"))
+          });
+          e.title("Members in queue:".to_string())
+        })
+      });
     }
   }
+
   game.next_phase();
   game.draft_pool.members()
 }

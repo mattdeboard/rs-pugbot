@@ -11,7 +11,7 @@ use serenity::framework::standard::{
 use serenity::model::prelude::{Message, UserId};
 use serenity::prelude::Context;
 use serenity::utils::Colour;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 pub fn error_embed(description: &'static str) -> &mut CreateEmbed {
   let create_embed = CreateEmbed::default();

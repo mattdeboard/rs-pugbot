@@ -1,6 +1,4 @@
-use serenity::model::channel::{Embed, EmbedFooter};
 use serenity::model::user::User;
-use serenity::utils::Colour;
 use std::collections::HashMap;
 use typemap::Key;
 
@@ -45,30 +43,6 @@ impl PoolAvailability for DraftPool {
   fn is_open(&self) -> bool {
     (self.members().len() as u32) < queue_size()
   }
-
-  fn members_full_embed(&mut self, r: u8, g: u8, b: u8) -> Option<Embed> {
-    let members = self.members();
-
-    Some(Embed {
-      author: None,
-      colour: Colour::from_rgb(r, g, b),
-      description: Some(members.into_iter().map(|m| m.clone().name).collect()),
-      footer: Some(EmbedFooter {
-        icon_url: None,
-        proxy_icon_url: None,
-        text: format!("The queue is full! Now picking captains!"),
-      }),
-      fields: Vec::new(),
-      image: None,
-      kind: "rich".to_string(),
-      provider: None,
-      thumbnail: None,
-      timestamp: None,
-      title: Some("Members in queue:".to_string()),
-      url: None,
-      video: None,
-    })
-  }
 }
 
 impl HasMembers for DraftPool {
@@ -76,49 +50,21 @@ impl HasMembers for DraftPool {
     self.members.clone()
   }
 
-  fn add_member(&mut self, user: User) -> Option<Embed> {
+  fn add_member(&mut self, user: User) -> Result<usize, &str> {
     self.members.push(user);
     self.members.dedup();
 
     if (self.members.len() as u32) == queue_size() {
-      return self.members_full_embed(165, 255, 241);
+      return Err("Draft pool is full!");
     }
 
-    self.members_changed_embed(165, 255, 241)
+    Ok(self.members.len())
   }
 
-  fn remove_member(&mut self, user: User) -> Option<Embed> {
+  fn remove_member(&mut self, user: User) {
     self.members.retain(|m| m.id != user.id);
     self.members.dedup();
-    self.members_changed_embed(165, 255, 241)
-  }
-
-  fn members_changed_embed(&mut self, r: u8, g: u8, b: u8) -> Option<Embed> {
-    let members = self.members.clone();
-
-    Some(Embed {
-      author: None,
-      colour: Colour::from_rgb(r, g, b),
-      description: Some(members.into_iter().map(|m| m.clone().name).collect()),
-      footer: Some(EmbedFooter {
-        icon_url: None,
-        proxy_icon_url: None,
-        text: format!(
-          "{} of {} users in queue",
-          self.members.len(),
-          queue_size()
-        ),
-      }),
-      fields: Vec::new(),
-      image: None,
-      kind: "rich".to_string(),
-      provider: None,
-      thumbnail: None,
-      timestamp: None,
-      title: Some("Members in queue:".to_string()),
-      url: None,
-      video: None,
-    })
+    // self.members_changed_embed(165, 255, 241)
   }
 }
 
