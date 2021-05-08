@@ -69,7 +69,7 @@ pub async fn remove_member(
 mod tests {
   use serde;
   use serde_json;
-  use serenity;
+  use serenity::{self};
 
   use self::serde::de::Deserialize;
   use self::serde_json::Value;
@@ -79,12 +79,12 @@ mod tests {
   use serenity::model::channel::Message;
   use std::fs::File;
 
-  fn test_context() -> Box<serenity::client::Context> {
+  fn test_context(msg: &Message) -> Box<serenity::client::Context> {
     let context = commands::mock_context::tests::mock_context();
     {
       let game = Game::new(
         vec![],
-        DraftPool::new(vec![], 12),
+        DraftPool::new(vec![msg.author.clone()], 12),
         1,
         Vec::new(),
         // Draft pool max size: 12 (2 * 6)
@@ -100,17 +100,20 @@ mod tests {
   #[allow(unused_must_use)]
   #[test]
   fn test_remove_member() {
-    let context = test_context();
     let message = struct_from_json!(Message, "message");
+    let context = test_context(&message);
     let mut data = tokio_test::block_on(context.data.write());
     let the_game = data.get_mut::<GameContainer>();
 
     if let Some(game) = the_game {
       assert_eq!(game.phase, Some(Phases::PlayerRegistration));
       async {
-        let members =
-          commands::remove::remove_member(&context, &message, false).await;
-        assert_eq!(members.len(), 0);
+        // Precondition. Draft pool should have 1 member, the author of
+        // the message.
+        assert_eq!(game.draft_pool.members.len(), 1);
+        commands::remove::remove_member(&context, &message, false).await;
+        // Post condition. Pool should now be empty.
+        assert_eq!(game.draft_pool.members.len(), 0);
       };
     }
   }
