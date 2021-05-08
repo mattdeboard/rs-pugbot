@@ -5,9 +5,8 @@ use crate::team_id_range;
 use crate::traits::has_members::HasMembers;
 use crate::traits::phased::Phased;
 use rand::{prelude::SliceRandom, thread_rng};
-use serenity::model::channel::Embed;
 use serenity::model::id::UserId;
-use serenity::utils::Colour;
+use serenity::prelude::TypeMapKey;
 use std::collections::HashMap;
 use std::iter::Cycle;
 use std::ops::Range;
@@ -26,6 +25,12 @@ pub struct Game {
   pub teams: Vec<Team>,
   pub turn_number: usize,
   pub turn_taker: Cycle<Range<u32>>,
+}
+
+pub struct GameContainer;
+
+impl TypeMapKey for GameContainer {
+  type Value = Game;
 }
 
 #[derive(PartialEq, Debug)]
@@ -112,13 +117,8 @@ impl Game {
     Err("Team creation failed unexpectedly")
   }
 
-  pub fn drafting_complete_embed(
-    &mut self,
-    r: u8,
-    g: u8,
-    b: u8,
-  ) -> Option<Embed> {
-    let roster: Vec<String> = self
+  pub fn roster(&self) -> Vec<String> {
+    self
       .teams
       .clone()
       .iter()
@@ -127,73 +127,11 @@ impl Game {
           team.members.iter().map(|user| user.clone().name).collect();
         format!("Team {} roster:\n{}", team.id, member_names.join("\n"))
       })
-      .collect();
-
-    Some(Embed {
-      author: None,
-      colour: Colour::from_rgb(r, g, b),
-      description: Some(roster.join("\n---\n")),
-      footer: None,
-      fields: Vec::new(),
-      image: None,
-      kind: "rich".to_string(),
-      provider: None,
-      thumbnail: None,
-      timestamp: None,
-      title: Some(String::from("Drafting has been completed!")),
-      url: None,
-      video: None,
-    })
+      .collect()
   }
 
   pub fn register_vote(&mut self, user_id: UserId) {
     self.eligible_voter_ids.retain(|&id| id != user_id);
-  }
-
-  pub fn map_winner_embed(&self, r: u8, g: u8, b: u8) -> Option<Embed> {
-    let map_name = &self.active_map;
-    Some(Embed {
-      author: None,
-      colour: Colour::from_rgb(r, g, b),
-      description: Some(format!("The winning map is {:?}!", map_name)),
-      footer: None,
-      fields: Vec::new(),
-      image: None,
-      kind: "rich".to_string(),
-      provider: None,
-      thumbnail: None,
-      timestamp: None,
-      title: Some(format!("The winning map is {:?}!", map_name)),
-      url: None,
-      video: None,
-    })
-  }
-
-  pub fn map_selection_embed(&self, r: u8, g: u8, b: u8) -> Option<Embed> {
-    let maps: Vec<String> = self.map_choices.iter().enumerate().fold(
-      vec![String::from(
-        "Typing `~mv <#>` will register your map vote (You must be on a team to vote)",
-      )],
-      |mut acc, (index, map)| {
-        acc.push(format!("{} -> {}", index + 1, map.map_name));
-        acc
-      },
-    );
-    Some(Embed {
-      author: None,
-      colour: Colour::from_rgb(r, g, b),
-      description: Some(maps.join("\n")),
-      footer: None,
-      fields: Vec::new(),
-      image: None,
-      kind: "rich".to_string(),
-      provider: None,
-      thumbnail: None,
-      timestamp: None,
-      title: Some("Time to pick a map!".to_string()),
-      url: None,
-      video: None,
-    })
   }
 }
 
@@ -288,39 +226,51 @@ impl Key for Game {
 pub mod tests {
   use serde;
   use serde_json;
-  use serenity;
+  use serenity::{self, client::Context};
 
   use self::serde::de::Deserialize;
   use self::serde_json::Value;
-  use crate::models::draft_pool::DraftPool;
   use crate::models::game::{Game, Phased, Phases};
+  use crate::models::{draft_pool::DraftPool, game::GameContainer};
   use crate::{commands, struct_from_json};
   use serenity::model::channel::Message;
-  use serenity::model::id::UserId;
+  // use serenity::model::id::UserId;
   use serenity::model::user::User;
   use std::fs::File;
 
-  fn gen_test_user() -> User {
-    User {
-      id: UserId(210),
-      avatar: Some("abc".to_string()),
-      bot: false,
-      discriminator: 1432,
-      name: "TestUser".to_string(),
+  fn test_context() -> Box<Context> {
+    let context = commands::mock_context::tests::mock_context();
+    {
+      let game = Game::new(
+        vec![],
+        DraftPool::new(vec![], 12),
+        1,
+        Vec::new(),
+        // Draft pool max size: 12 (2 * 6)
+        2,
+        6,
+      );
+      let mut data = tokio_test::block_on(context.data.write());
+      data.insert::<GameContainer>(game);
     }
+    Box::new(context)
   }
 
   #[test]
   /// Test what should happen when next_phase is called in PlayerRegistration
   /// phase and there is still room in the queue.
   fn test_game_next_phase_empty_queue() {
-    let game =
-      &mut Game::new(vec![], DraftPool::new(vec![], 12), 1, Vec::new(), 2, 6);
-    assert_eq!(game.phase, Some(Phases::PlayerRegistration));
-    game.next_phase();
-    // Invoking next_phase should just keep returning PlayerRegistration since
-    // there is still room in the queue.
-    assert_eq!(game.phase, Some(Phases::PlayerRegistration));
+    let context = test_context();
+    let mut data = tokio_test::block_on(context.data.write());
+    let the_game = data.get_mut::<GameContainer>();
+
+    if let Some(game) = the_game {
+      assert_eq!(game.phase, Some(Phases::PlayerRegistration));
+      game.next_phase();
+      // Invoking next_phase should just keep returning PlayerRegistration since
+      // there is still room in the queue.
+      assert_eq!(game.phase, Some(Phases::PlayerRegistration));
+    }
   }
 
   #[test]
@@ -338,29 +288,27 @@ pub mod tests {
 
   #[test]
   fn test_select_captains() {
+    let context = test_context();
+    let mut data = tokio_test::block_on(context.data.write());
+    let the_game = data.get_mut::<GameContainer>();
     let message = struct_from_json!(Message, "message");
-    let game = &mut Game::new(
-      vec![],
-      DraftPool::new(vec![gen_test_user()], 2),
-      1,
-      Vec::new(),
-      // Draft pool max size: 2 (1 * 2)
-      1,
-      2,
-    );
-    assert_eq!(game.phase, Some(Phases::PlayerRegistration));
-    // Invoking update_members invoke the `next_phase` call, which should
-    // advance the phase.
-    commands::add::update_members(game, &message, false);
-    assert_eq!(game.phase, Some(Phases::CaptainSelection));
-    // Advancing to `CaptainSelection` should build the available_players
-    // HashMap.
-    assert_eq!(game.draft_pool.available_players.len(), 2);
-    game.select_captains();
-    // There should now be one team built, with only one team member, leaving
-    // one available player.
-    assert_eq!(game.draft_pool.available_players.len(), 1);
-    assert_eq!(game.teams.len(), 1);
+    if let Some(game) = the_game {
+      assert_eq!(game.phase, Some(Phases::PlayerRegistration));
+      // Invoking update_members invoke the `next_phase` call, which should
+      // advance the phase.
+      async {
+        commands::add::update_members(&context, &message, false).await;
+        assert_eq!(game.phase, Some(Phases::CaptainSelection));
+        // Advancing to `CaptainSelection` should build the available_players
+        // HashMap.
+        assert_eq!(game.draft_pool.available_players.len(), 2);
+        game.select_captains();
+        // There should now be one team built, with only one team member, leaving
+        // one available player.
+        assert_eq!(game.draft_pool.available_players.len(), 1);
+        assert_eq!(game.teams.len(), 1);
+      };
+    }
   }
 
   #[test]

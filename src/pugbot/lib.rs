@@ -2,8 +2,6 @@
 #[macro_use]
 extern crate log;
 #[macro_use]
-extern crate serenity;
-#[macro_use]
 extern crate diesel;
 #[macro_use]
 extern crate serde_derive;
@@ -11,6 +9,7 @@ extern crate serde_derive;
 use env_logger;
 use kankyo;
 
+pub mod command_groups;
 pub mod commands;
 pub mod db;
 pub mod models;
@@ -18,21 +17,19 @@ pub mod schema;
 pub mod traits;
 
 use crate::models::draft_pool::DraftPool;
-use crate::models::game::Game;
+use crate::models::game::{Game, GameContainer};
+
 // use crate::models::team::Team;
 // use glicko2::{new_rating, GameResult, Glicko2Rating};
 use serenity::builder::CreateEmbed;
-use serenity::framework::standard::help_commands;
 use serenity::framework::StandardFramework;
 use serenity::http;
-use serenity::model::channel::{Embed, Message};
+use serenity::model::channel::Message;
 use serenity::model::event::ResumedEvent;
 use serenity::model::gateway::Ready;
 use serenity::model::id::UserId;
 use serenity::prelude::*;
 use std::collections::HashSet;
-use std::convert::From;
-use std::env;
 use std::ops::Range;
 
 #[macro_export]
@@ -48,12 +45,13 @@ macro_rules! struct_from_json {
 
 struct Handler;
 
+#[serenity::async_trait]
 impl EventHandler for Handler {
-  fn ready(&self, _: Context, ready: Ready) {
+  async fn ready(&self, _: Context, ready: Ready) {
     info!("Connected as {}", ready.user.name);
   }
 
-  fn resume(&self, _: Context, _: ResumedEvent) {
+  async fn resume(&self, _: Context, _: ResumedEvent) {
     info!("Resumed");
   }
 }
@@ -61,7 +59,7 @@ impl EventHandler for Handler {
 fn team_size() -> u32 {
   kankyo::load().expect("Failed to load .env file");
 
-  match env::var("TEAM_SIZE") {
+  match std::env::var("TEAM_SIZE") {
     Ok(size) => {
       if let Ok(s) = size.parse::<u32>() {
         s
@@ -98,15 +96,26 @@ fn queue_size() -> u32 {
   team_count() * team_size()
 }
 
-#[allow(unused_must_use)]
-pub fn client_setup() {
+pub async fn client_setup() {
   env_logger::init().expect("Failed to initialize env_logger");
-  let token =
-    env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
-  let mut client = Client::new(&token, Handler).expect("Err creating client");
+  let token = std::env::var("DISCORD_TOKEN")
+    .expect("Expected a token in the environment");
+  let owners = bot_owners(&token).await;
+  let framework = StandardFramework::new()
+    .configure(|c| c.owners(owners).prefix("~"))
+    .help(&commands::HELP_CMD)
+    .group(&command_groups::map_voting::MAPVOTING_GROUP)
+    .group(&command_groups::player_drafting::PLAYERDRAFTING_GROUP)
+    .group(&command_groups::player_registration::PLAYERREGISTRATION_GROUP);
+
+  let mut client = Client::builder(&token)
+    .event_handler(Handler)
+    .framework(framework)
+    .await
+    .expect("Err creating client");
 
   {
-    let mut data = client.data.lock();
+    let mut data = client.data.write().await;
     let draft_pool = DraftPool::new(Vec::new(), team_count() * team_size());
     let db_pool = db::init_pool(None);
     let conn = db_pool.get().unwrap();
@@ -119,72 +128,29 @@ pub fn client_setup() {
       team_count(),
       team_size(),
     );
-    data.insert::<Game>(game);
+    data.insert::<GameContainer>(game);
     data.insert::<db::Pool>(db_pool);
   }
 
-  client.with_framework(
-    StandardFramework::new()
-      .configure(|c| c.owners(bot_owners()).prefix("~"))
-      .help(help_commands::with_embeds)
-      .group("Map Voting", |g| {
-        g.command("vote", |c| {
-          c.desc("Records your vote for map selection")
-            .cmd(commands::mapvote::mapvote)
-            .batch_known_as(vec!["v", "mv"])
-        })
-      })
-      .group("Player Drafting", |g| {
-        g.desc("Commands here are available to Captains only")
-          .command("pick", |c| {
-            c.desc("(Captains Only) `pick #` adds player `#` to your team.
-
-Once enough players to fill out all the teams have added themselves, captains will be automatically selected at random. One captain will be selected per team.
-
-The bot will then display a numbered list of players, like so:
-
-```
-  Index     Player Name
-----------|-------------
-    1     | Alice
-    2     | Bob
-    3     | Charlie
-```
-
-Captains will be able to use the `~pick <index>` command.")
-              .cmd(commands::pick::pick)
-              .batch_known_as(vec!["p"])
-          })
-      })
-      .group("Player Registration", |g| {
-        g.command("add", |c| {
-          c.desc(
-            "Adds yourself to the pool of draftable players, or \"draft pool.\"
-
-Once enough people to fill out all the teams have added themselves, captains will be automatically selected at random, and drafting will begin.",
-          )
-          .cmd(commands::add::add)
-          .batch_known_as(vec!["a"])
-        })
-        .command("remove", |c| {
-          c.desc("Removes yourself from the draft pool.")
-            .cmd(commands::remove::remove)
-            .batch_known_as(vec!["r"])
-        })
-      }),
-  );
-  client.start();
+  client.start().await.unwrap(); // FIXME: should the return be a Result?
 }
 
-pub fn consume_message(msg: &Message, embed: Embed) {
+#[allow(unused_must_use)]
+pub async fn consume_message<'a, F>(
+  ctx: &'a Context,
+  msg: &Message,
+  create_embed: F,
+) where
+  F: FnOnce(&mut CreateEmbed) -> &mut CreateEmbed,
+{
   msg
     .channel_id
-    .send_message(|m| m.embed(|_| CreateEmbed::from(embed)))
-    .unwrap();
+    .send_message(&ctx.http, |m| m.embed(create_embed));
 }
 
-fn bot_owners() -> HashSet<UserId> {
-  match http::get_current_application_info() {
+async fn bot_owners(token: &str) -> HashSet<UserId> {
+  let client = http::client::Http::new_with_token(token); // XXX: maybe retain this client higher in the call stack?
+  match client.get_current_application_info().await {
     Ok(info) => {
       let mut set = HashSet::new();
       set.insert(info.owner.id);

@@ -5,10 +5,9 @@ use diesel::{
 };
 use r2d2;
 use r2d2_diesel::ConnectionManager;
-use serenity::model::user::User;
+use serenity::{model::user::User, prelude::TypeMapKey};
 use std::env;
 use std::ops::Deref;
-use typemap::Key;
 
 use crate::models::map::Map as GameMap;
 use crate::models::user::DiscordUser;
@@ -31,7 +30,7 @@ impl Deref for DbConn {
 
 pub struct Pool;
 
-impl Key for Pool {
+impl TypeMapKey for Pool {
   type Value = r2d2::Pool<ConnectionManager<PgConnection>>;
 }
 
