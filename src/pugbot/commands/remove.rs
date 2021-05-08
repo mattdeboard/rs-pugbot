@@ -111,9 +111,9 @@ mod tests {
       // Precondition. Draft pool should have 1 member, the author of
       // the message.
       assert_eq!(game.draft_pool.members.len(), 1);
-      let members = commands::remove::remove_member(&context, &message, false);
+      commands::remove::remove_member(&context, &message, false).await;
       // Post condition. Pool should now be empty.
-      assert_eq!(members.await.len(), 0);
+      assert_eq!(game.draft_pool.members.len(), 0);
     }
   }
 }
