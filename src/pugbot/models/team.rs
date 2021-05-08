@@ -1,8 +1,6 @@
 use crate::traits::has_members::HasMembers;
 // use glicko2::Glicko2Rating;
-use serenity::model::channel::{Embed, EmbedFooter};
 use serenity::model::user::User;
-use serenity::utils::Colour;
 use std::clone::Clone;
 use typemap::Key;
 
@@ -23,48 +21,15 @@ impl HasMembers for Team {
     self.members.clone()
   }
 
-  fn add_member(&mut self, user: User) -> Option<Embed> {
+  fn add_member(&mut self, user: User) -> Result<usize, &str> {
     self.members.push(user);
     self.members.dedup();
-    self.members_changed_embed(255, 223, 165)
+    Ok(self.members.len())
   }
 
-  fn remove_member(&mut self, user: User) -> Option<Embed> {
+  fn remove_member(&mut self, user: User) -> Result<usize, &str> {
     self.members.retain(|m| m.id != user.id);
     self.members.dedup();
-    self.members_changed_embed(255, 223, 165)
-  }
-
-  fn members_changed_embed(&mut self, r: u8, g: u8, b: u8) -> Option<Embed> {
-    let members = &self.members;
-
-    Some(Embed {
-      author: None,
-      colour: Colour::from_rgb(r, g, b),
-      description: Some(members.into_iter().map(|m| m.clone().name).collect()),
-      footer: Some(EmbedFooter {
-        icon_url: None,
-        proxy_icon_url: None,
-        text: match self.captain {
-          Some(ref user) => {
-            format!("{} is Team {} Captain", user.name, self.id)
-          }
-          None => format!("Team {} has no captain, yet", self.id),
-        },
-      }),
-      fields: Vec::new(),
-      image: None,
-      kind: "rich".to_string(),
-      provider: None,
-      thumbnail: None,
-      timestamp: None,
-      title: Some(format!(
-        "Team {} has {} members:",
-        self.id,
-        self.members.len()
-      )),
-      url: None,
-      video: None,
-    })
+    Ok(self.members.len())
   }
 }
