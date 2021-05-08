@@ -1,7 +1,7 @@
-use serenity::model::user::User;
+use serenity::model::id::UserId;
 
 pub trait HasMembers {
-  fn members(&self) -> Vec<User>;
-  fn add_member(&mut self, user: User) -> Result<usize, &str>;
-  fn remove_member(&mut self, user: User) -> Result<usize, &str>;
+  fn members(&self) -> Vec<UserId>;
+  fn add_member(&mut self, user: UserId) -> Result<usize, &str>;
+  fn remove_member(&mut self, user: UserId) -> Result<usize, &str>;
 }

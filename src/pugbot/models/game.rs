@@ -5,8 +5,8 @@ use crate::team_id_range;
 use crate::traits::has_members::HasMembers;
 use crate::traits::phased::Phased;
 use rand::{prelude::SliceRandom, thread_rng};
-use serenity::model::id::UserId;
 use serenity::prelude::TypeMapKey;
+use serenity::{client::Context, model::id::UserId};
 use std::collections::HashMap;
 use std::iter::Cycle;
 use std::ops::Range;
@@ -68,7 +68,7 @@ impl Game {
     Game {
       active_map: None,
       draft_pool: draft_pool,
-      eligible_voter_ids: members.iter().map(|m| m.id).collect(),
+      eligible_voter_ids: members,
       game_mode_id: mode_id,
       map_choices: map_choices,
       map_votes,
@@ -96,7 +96,7 @@ impl Game {
         if let Some(user) = self.draft_pool.pop_available_player(random_key) {
           Some(Team {
             id: i,
-            captain: Some(user.clone()),
+            captain: Some(user),
             members: vec![user],
             // glicko2_ratings: vec![],
           })
@@ -117,17 +117,13 @@ impl Game {
     Err("Team creation failed unexpectedly")
   }
 
-  pub fn roster(&self) -> Vec<String> {
-    self
-      .teams
-      .clone()
-      .iter()
-      .map(|team| {
-        let member_names: Vec<String> =
-          team.members.iter().map(|user| user.clone().name).collect();
-        format!("Team {} roster:\n{}", team.id, member_names.join("\n"))
-      })
-      .collect()
+  pub async fn roster(&self, ctx: &Context) -> Vec<String> {
+    let mut names: Vec<String> = vec![];
+
+    for team in &self.teams {
+      async { names.append(&mut team.get_users(ctx).await) }.await;
+    }
+    names
   }
 
   pub fn register_vote(&mut self, user_id: UserId) {
@@ -226,7 +222,7 @@ impl Key for Game {
 pub mod tests {
   use serde;
   use serde_json;
-  use serenity;
+  use serenity::{self, model::id::UserId};
 
   use self::serde::de::Deserialize;
   use self::serde_json::Value;
@@ -309,7 +305,10 @@ pub mod tests {
     let (team_count, team_size) = (2, (authors.len() / 2) as u32);
     let game = &mut Game::new(
       vec![],
-      DraftPool::new(authors, team_count * team_size),
+      DraftPool::new(
+        vec![UserId(1), UserId(2), UserId(3), UserId(4)],
+        team_count * team_size,
+      ),
       1,
       Vec::new(),
       team_count,

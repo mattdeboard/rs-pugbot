@@ -1,7 +1,6 @@
 use crate::models::game::GameContainer;
 use crate::{queue_size, traits::has_members::HasMembers};
-use serenity::model::channel::Message;
-use serenity::model::user::User;
+use serenity::model::{channel::Message, id::UserId};
 use serenity::prelude::Context;
 use serenity::{
   builder::CreateEmbedAuthor, framework::standard::CommandResult,
@@ -22,19 +21,13 @@ pub async fn remove_member(
   ctx: &Context,
   msg: &Message,
   send_embed: bool,
-) -> Vec<User> {
+) -> Vec<UserId> {
   let mut data = ctx.data.write().await;
   let game = data.get_mut::<GameContainer>().unwrap();
 
   let author = msg.author.clone();
   if send_embed {
-    let embed_descrip: String = game
-      .draft_pool
-      .members
-      .clone()
-      .into_iter()
-      .map(|m| m.clone().name)
-      .collect();
+    let embed_descrip = async { game.roster(ctx).await.join("\n") }.await;
     let embed_color = Colour::from_rgb(165, 255, 241);
     msg.channel_id.send_message(&ctx.http, |m| {
       m.embed(|e| {

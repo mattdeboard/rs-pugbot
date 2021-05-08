@@ -48,7 +48,7 @@ pub async fn map_vote(
     return Err(err);
   }
 
-  if !game.draft_pool.members.contains(&msg.author) && send_embed {
+  if !game.draft_pool.members.contains(&msg.author.id) && send_embed {
     match msg.author.direct_message(&ctx.http, |m| m.content(
       "Sorry, but you're not allowed to map vote because you're not registered to play!"
     )).await {
@@ -114,8 +114,8 @@ mod tests {
   use crate::{commands, struct_from_json};
   use serde;
   use serde_json;
-  use serenity::model::channel::Message;
   use serenity::model::user::User;
+  use serenity::model::{channel::Message, id::UserId};
   use serenity::{self};
   use std::fs::File;
 
@@ -134,7 +134,10 @@ mod tests {
     let (team_count, team_size) = (2, (authors.len() / 2) as u32);
     let game = &mut Game::new(
       vec![],
-      DraftPool::new(authors, team_count * team_size),
+      DraftPool::new(
+        vec![UserId(1), UserId(2), UserId(3), UserId(4)],
+        team_count * team_size,
+      ),
       1,
       maps,
       team_count,

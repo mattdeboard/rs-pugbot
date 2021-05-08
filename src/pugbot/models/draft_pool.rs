@@ -1,4 +1,4 @@
-use serenity::model::user::User;
+use serenity::model::id::UserId;
 use std::collections::HashMap;
 use typemap::Key;
 
@@ -7,13 +7,13 @@ use crate::traits::has_members::HasMembers;
 use crate::traits::pool_availability::*;
 
 pub struct DraftPool {
-  pub members: Vec<User>,
-  pub available_players: HashMap<usize, User>,
+  pub members: Vec<UserId>,
+  pub available_players: HashMap<usize, UserId>,
   pub max_members: u32,
 }
 
 impl DraftPool {
-  pub fn new(members: Vec<User>, max_members: u32) -> DraftPool {
+  pub fn new(members: Vec<UserId>, max_members: u32) -> DraftPool {
     DraftPool {
       members: members,
       available_players: HashMap::new(),
@@ -21,7 +21,7 @@ impl DraftPool {
     }
   }
 
-  pub fn available_players(self) -> HashMap<usize, User> {
+  pub fn available_players(self) -> HashMap<usize, UserId> {
     self.available_players
   }
 
@@ -34,7 +34,7 @@ impl DraftPool {
   pub fn pop_available_player(
     &mut self,
     player_number: &usize,
-  ) -> Option<User> {
+  ) -> Option<UserId> {
     self.available_players.remove(player_number)
   }
 }
@@ -46,11 +46,11 @@ impl PoolAvailability for DraftPool {
 }
 
 impl HasMembers for DraftPool {
-  fn members(&self) -> Vec<User> {
+  fn members(&self) -> Vec<UserId> {
     self.members.clone()
   }
 
-  fn add_member(&mut self, user: User) -> Result<usize, &str> {
+  fn add_member(&mut self, user: UserId) -> Result<usize, &str> {
     self.members.push(user);
     self.members.dedup();
 
@@ -61,8 +61,8 @@ impl HasMembers for DraftPool {
     Ok(self.members.len())
   }
 
-  fn remove_member(&mut self, user: User) -> Result<usize, &str> {
-    self.members.retain(|m| m.id != user.id);
+  fn remove_member(&mut self, user: UserId) -> Result<usize, &str> {
+    self.members.retain(|m| m != &user);
     self.members.dedup();
     Ok(self.members.len())
   }

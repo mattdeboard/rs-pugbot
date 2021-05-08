@@ -86,10 +86,11 @@ pub async fn draft_player(
       },
     );
     let embed_colour = Colour::from_rgb(165, 255, 241);
+    let embed_descrip = async { game.roster(ctx).await.join("\n--\n") }.await;
     msg.channel_id.send_message(&ctx.http, |m| {
       m.embed(|e| {
         e.color(embed_colour);
-        e.description(game.roster().join("\n--\n"));
+        e.description(embed_descrip);
         e.title(String::from("Drafting has been completed!"))
       })
     });
@@ -109,7 +110,7 @@ pub async fn draft_player(
 mod tests {
   use serde;
   use serde_json;
-  use serenity;
+  use serenity::{self, model::id::UserId};
 
   use self::serde::de::Deserialize;
   use self::serde_json::Value;
@@ -118,13 +119,12 @@ mod tests {
   use crate::traits::phased::Phased;
   use crate::{commands, struct_from_json};
   use serenity::model::channel::Message;
-  use serenity::model::user::User;
   use std::fs::File;
 
   #[test]
   fn test_pick_player() {
     // let context = commands::mock_context::tests::mock_context();
-    let authors: Vec<User> = struct_from_json!(Vec, "authors");
+    let authors = vec![UserId(1), UserId(2), UserId(3), UserId(4)];
     let (team_count, team_size) = (2, (authors.len() / 2) as u32);
     // Choosing 2 teams of 5 here since there are 10 authors in authors.json
     let game = &mut Game::new(
@@ -168,7 +168,7 @@ mod tests {
 
   #[test]
   fn test_full_teams() {
-    let authors: Vec<User> = struct_from_json!(Vec, "authors");
+    let authors = vec![UserId(1), UserId(2), UserId(3), UserId(4)];
     let message = struct_from_json!(Message, "message");
     let (team_count, team_size) = (2, (authors.len() / 2) as u32);
     let game = &mut Game::new(

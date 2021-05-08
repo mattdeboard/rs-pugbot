@@ -5,7 +5,7 @@ use diesel::{
 };
 use r2d2;
 use r2d2_diesel::ConnectionManager;
-use serenity::{model::user::User, prelude::TypeMapKey};
+use serenity::{model::prelude::User, prelude::TypeMapKey};
 use std::env;
 use std::ops::Deref;
 

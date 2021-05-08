@@ -44,3 +44,4 @@ typemap = "0.3"
 [dev-dependencies]
 tokio-test = "*"
 futures = "0.3"
+mockall = "*"

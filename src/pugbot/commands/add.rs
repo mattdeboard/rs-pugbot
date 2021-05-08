@@ -1,5 +1,4 @@
-use serenity::model::channel::Message;
-use serenity::model::user::User;
+use serenity::model::{channel::Message, id::UserId};
 use serenity::{framework::standard::macros::command, utils::Colour};
 
 use crate::traits::has_members::HasMembers;
@@ -27,21 +26,15 @@ pub async fn update_members(
   ctx: &Context,
   msg: &Message,
   send_embed: bool,
-) -> Vec<User> {
+) -> Vec<UserId> {
   let mut data = ctx.data.write().await;
   if let Some(game) = data.get_mut::<GameContainer>() {
-    let embed_descrip: String = game
-      .draft_pool
-      .members
-      .clone()
-      .into_iter()
-      .map(|m| m.clone().name)
-      .collect();
     let embed_color = Colour::from_rgb(165, 255, 241);
     let author = msg.author.clone();
     if send_embed {
+      let embed_descrip = async { game.roster(ctx).await.join("\n") }.await;
       if game.phase == Some(Phases::PlayerRegistration) {
-        match game.draft_pool.add_member(author) {
+        match game.draft_pool.add_member(author.id) {
           Ok(_) => {
             msg.channel_id.send_message(&ctx.http, |m| {
               m.embed(|e| {
