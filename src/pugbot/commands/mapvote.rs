@@ -116,7 +116,7 @@ mod tests {
   use serde_json;
   use serenity::model::channel::Message;
   use serenity::model::user::User;
-  use serenity::{self, Client};
+  use serenity::{self};
   use std::fs::File;
 
   macro_rules! bo {
@@ -154,7 +154,7 @@ mod tests {
     // This is the key of the game map we're voting for in this test.
     let candidate_map_idx = 1;
     let mut counter = 0;
-    let client = bo!(Client::builder("abc123")).unwrap();
+    // let client = bo!(Client::builder("abc123")).unwrap();
     // We register a map vote for each player here.
     for _ in 0..(team_count * team_size) {
       // Precondition. We should be in the right phase every time.

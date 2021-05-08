@@ -1,19 +1,23 @@
 use crate::models::game::GameContainer;
 use crate::{queue_size, traits::has_members::HasMembers};
-use serenity::framework::standard::CommandResult;
 use serenity::model::channel::Message;
 use serenity::model::user::User;
 use serenity::prelude::Context;
+use serenity::{
+  builder::CreateEmbedAuthor, framework::standard::CommandResult,
+};
 use serenity::{framework::standard::macros::command, utils::Colour};
 
 #[command]
 #[aliases("r")]
 #[description("Removes yourself from the draft pool.")]
+#[allow(unused_must_use)]
 pub(crate) async fn remove(ctx: &Context, msg: &Message) -> CommandResult {
   remove_member(ctx, msg, true);
   Ok(())
 }
 
+#[allow(unused_must_use)]
 pub async fn remove_member(
   ctx: &Context,
   msg: &Message,
@@ -34,6 +38,10 @@ pub async fn remove_member(
     let embed_color = Colour::from_rgb(165, 255, 241);
     msg.channel_id.send_message(&ctx.http, |m| {
       m.embed(|e| {
+        let mut cea = CreateEmbedAuthor::default();
+        cea.name(&author.name);
+        cea.icon_url(&author.avatar_url().unwrap_or("No Avatar".to_string()));
+        e.set_author(cea);
         e.color(embed_color);
         e.description(embed_descrip);
         e.footer(|f| {
@@ -57,26 +65,25 @@ mod tests {
 
   use self::serde::de::Deserialize;
   use self::serde_json::Value;
+  use crate::models::draft_pool::DraftPool;
   use crate::models::game::{Game, Phases};
-  use crate::models::{draft_pool::DraftPool, user::DiscordUser};
   use crate::{commands, struct_from_json};
   use serenity::model::channel::Message;
-  use serenity::model::id::UserId;
-  use std::{fs::File, str::FromStr};
+  use std::fs::File;
 
-  fn gen_test_user(id: Option<UserId>) -> DiscordUser {
-    DiscordUser {
-      id: match id {
-        Some(user_id) => user_id,
-        None => UserId(210),
-      },
-      avatar: Some("abc".to_string()),
-      bot: false,
-      discriminator: 1432,
-      name: "TestUser".to_string(),
-      discord_user_id: UserId::from_str("1").unwrap(),
-    }
-  }
+  // fn gen_test_user(id: Option<UserId>) -> DiscordUser {
+  //   DiscordUser {
+  //     id: match id {
+  //       Some(user_id) => user_id,
+  //       None => UserId(210),
+  //     },
+  //     avatar: Some("abc".to_string()),
+  //     bot: false,
+  //     discriminator: 1432,
+  //     name: "TestUser".to_string(),
+  //     discord_user_id: UserId::from_str("1").unwrap(),
+  //   }
+  // }
 
   #[test]
   fn test_remove_member() {

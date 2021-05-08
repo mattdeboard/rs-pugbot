@@ -10,10 +10,11 @@ pub mod tests {
 
   pub fn mock_context() -> Context {
     let (sender, _) = unbounded::<InterMessage>();
+    let messenger = ShardMessenger::new(sender);
     Context {
       cache: Arc::new(Cache::new()),
       http: Arc::new(Http::new_with_token("abc123")),
-      shard: ShardMessenger { tx: sender },
+      shard: messenger,
       shard_id: 1,
       data: Arc::new(RwLock::new(TypeMap::new())),
     }

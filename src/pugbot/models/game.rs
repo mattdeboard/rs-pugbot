@@ -5,9 +5,8 @@ use crate::team_id_range;
 use crate::traits::has_members::HasMembers;
 use crate::traits::phased::Phased;
 use rand::{prelude::SliceRandom, thread_rng};
-use serenity::utils::Colour;
-use serenity::{builder::CreateEmbed, model::id::UserId};
-use serenity::{model::channel::Embed, prelude::TypeMapKey};
+use serenity::model::id::UserId;
+use serenity::prelude::TypeMapKey;
 use std::collections::HashMap;
 use std::iter::Cycle;
 use std::ops::Range;
@@ -129,19 +128,6 @@ impl Game {
         format!("Team {} roster:\n{}", team.id, member_names.join("\n"))
       })
       .collect()
-  }
-
-  pub fn drafting_complete_embed(
-    &mut self,
-    r: u8,
-    g: u8,
-    b: u8,
-  ) -> &mut CreateEmbed {
-    let embed = CreateEmbed::default();
-    embed.color(Colour::from_rgb(r, g, b));
-    embed.description(self.roster().join("\n--\n"));
-    embed.title(String::from("Drafting has been completed!"));
-    &mut embed
   }
 
   pub fn register_vote(&mut self, user_id: UserId) {

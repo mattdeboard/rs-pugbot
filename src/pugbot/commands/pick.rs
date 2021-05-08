@@ -1,7 +1,6 @@
+use crate::models::game::GameContainer;
 use crate::models::game::Phases;
-use crate::{consume_message, models::game::GameContainer};
 
-use crate::commands::error_embed;
 use crate::traits::has_members::HasMembers;
 use crate::traits::phased::Phased;
 use serenity::framework::standard::{Args, CommandResult};
@@ -28,6 +27,7 @@ The bot will then display a numbered list of players, like so:
 
 Captains will be able to use the `~pick <index>` command."#
 )]
+#[allow(unused_must_use)]
 pub(crate) async fn pick(
   ctx: &Context,
   msg: &Message,
@@ -39,6 +39,7 @@ pub(crate) async fn pick(
   Ok(())
 }
 
+#[allow(unused_must_use)]
 pub async fn draft_player(
   ctx: &Context,
   msg: &Message,
@@ -47,9 +48,16 @@ pub async fn draft_player(
 ) -> Result<(), &'static str> {
   let mut data = ctx.data.write().await;
   let game = data.get_mut::<GameContainer>().unwrap();
+  let embed_color = Colour::from_rgb(165, 255, 241);
   if game.phase != Some(Phases::PlayerDrafting) && send_embed {
     let err = "We're not drafting right now!";
-    consume_message(ctx, msg, |_| error_embed(err)).await;
+    msg.channel_id.send_message(&ctx.http, |m| {
+      m.embed(|create_embed| {
+        create_embed.color(embed_color);
+        create_embed.description(String::from(err));
+        create_embed.title(String::from("ERROR"))
+      })
+    });
     return Err(err);
   }
 
@@ -60,7 +68,7 @@ pub async fn draft_player(
     let err =
       "The user selected for drafting has been drafted or is otherwise invalid";
     if send_embed {
-      consume_message(ctx, msg, |_| error_embed(err));
+      // consume_message(ctx, msg, |_| &mut error_embed(err));
     }
     return Err(err);
   }
@@ -115,7 +123,7 @@ mod tests {
 
   #[test]
   fn test_pick_player() {
-    let context = commands::mock_context::tests::mock_context();
+    // let context = commands::mock_context::tests::mock_context();
     let authors: Vec<User> = struct_from_json!(Vec, "authors");
     let (team_count, team_size) = (2, (authors.len() / 2) as u32);
     // Choosing 2 teams of 5 here since there are 10 authors in authors.json
@@ -133,7 +141,7 @@ mod tests {
     assert_eq!(game.select_captains(), Ok(()));
 
     // Make a random selection from available players
-    let pool = game.draft_pool.available_players.clone();
+    // let pool = game.draft_pool.available_players.clone();
 
     // if let Some(key) = pool.keys().next() {
     //   if let Some(_user) = game.draft_pool.available_players.get(key) {

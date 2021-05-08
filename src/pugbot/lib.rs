@@ -138,6 +138,7 @@ pub async fn client_setup() {
   client.start().await.unwrap(); // FIXME: should the return be a Result?
 }
 
+#[allow(unused_must_use)]
 pub async fn consume_message<'a, F>(
   ctx: &'a Context,
   msg: &Message,

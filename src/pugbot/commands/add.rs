@@ -16,74 +16,78 @@ use serenity::prelude::Context;
 
 Once enough people to fill out all the teams have added themselves, captains will be automatically selected at random, and drafting will begin."#
 )]
+#[allow(unused_must_use)]
 pub(crate) async fn add(ctx: &Context, msg: &Message) -> CommandResult {
   update_members(ctx, msg, true); // XXX: should this be the return value?
   Ok(())
 }
 
+#[allow(unused_must_use)]
 pub async fn update_members(
   ctx: &Context,
   msg: &Message,
   send_embed: bool,
 ) -> Vec<User> {
   let mut data = ctx.data.write().await;
-  let game = data.get_mut::<GameContainer>().unwrap();
-  let embed_descrip: String = game
-    .draft_pool
-    .members
-    .clone()
-    .into_iter()
-    .map(|m| m.clone().name)
-    .collect();
-  let embed_color = Colour::from_rgb(165, 255, 241);
-  let author = msg.author.clone();
-  if send_embed {
-    if game.phase == Some(Phases::PlayerRegistration) {
-      match game.draft_pool.add_member(author) {
-        Ok(_) => {
-          msg.channel_id.send_message(&ctx.http, |m| {
-            m.embed(|e| {
-              e.color(embed_color);
-              e.description(embed_descrip);
-              e.footer(|f| {
-                f.text(format!(
-                  "{} of {} users in queue",
-                  game.draft_pool.members.len(),
-                  queue_size()
-                ))
+  if let Some(game) = data.get_mut::<GameContainer>() {
+    let embed_descrip: String = game
+      .draft_pool
+      .members
+      .clone()
+      .into_iter()
+      .map(|m| m.clone().name)
+      .collect();
+    let embed_color = Colour::from_rgb(165, 255, 241);
+    let author = msg.author.clone();
+    if send_embed {
+      if game.phase == Some(Phases::PlayerRegistration) {
+        match game.draft_pool.add_member(author) {
+          Ok(_) => {
+            msg.channel_id.send_message(&ctx.http, |m| {
+              m.embed(|e| {
+                e.color(embed_color);
+                e.description(embed_descrip);
+                e.footer(|f| {
+                  f.text(format!(
+                    "{} of {} users in queue",
+                    game.draft_pool.members.len(),
+                    queue_size()
+                  ))
+                })
               })
-            })
-          });
+            });
+          }
+          Err(_) => {
+            msg.channel_id.send_message(&ctx.http, |m| {
+              m.embed(|e| {
+                e.color(embed_color);
+                e.description(embed_descrip);
+                e.footer(|f| {
+                  f.text(format!("The queue is full! Now picking captains!"))
+                });
+                e.title("Members in queue:".to_string())
+              })
+            });
+          }
         }
-        Err(_) => {
-          msg.channel_id.send_message(&ctx.http, |m| {
-            m.embed(|e| {
-              e.color(embed_color);
-              e.description(embed_descrip);
-              e.footer(|f| {
-                f.text(format!("The queue is full! Now picking captains!"))
-              });
-              e.title("Members in queue:".to_string())
-            })
-          });
-        }
+      } else {
+        msg.channel_id.send_message(&ctx.http, |m| {
+          m.embed(|e| {
+            e.color(embed_color);
+            e.description(embed_descrip);
+            e.footer(|f| {
+              f.text(format!("The queue is full! Now picking captains!"))
+            });
+            e.title("Members in queue:".to_string())
+          })
+        });
       }
-    } else {
-      msg.channel_id.send_message(&ctx.http, |m| {
-        m.embed(|e| {
-          e.color(embed_color);
-          e.description(embed_descrip);
-          e.footer(|f| {
-            f.text(format!("The queue is full! Now picking captains!"))
-          });
-          e.title("Members in queue:".to_string())
-        })
-      });
     }
-  }
 
-  game.next_phase();
-  game.draft_pool.members()
+    game.next_phase();
+    return game.draft_pool.members();
+  };
+  return vec![];
 }
 
 #[cfg(test)]
