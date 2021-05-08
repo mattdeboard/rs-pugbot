@@ -21,10 +21,8 @@ use crate::models::game::{Game, GameContainer};
 
 // use crate::models::team::Team;
 // use glicko2::{new_rating, GameResult, Glicko2Rating};
-use serenity::builder::CreateEmbed;
 use serenity::framework::StandardFramework;
 use serenity::http;
-use serenity::model::channel::Message;
 use serenity::model::event::ResumedEvent;
 use serenity::model::gateway::Ready;
 use serenity::model::id::UserId;
@@ -133,19 +131,6 @@ pub async fn client_setup() {
   }
 
   client.start().await.unwrap(); // FIXME: should the return be a Result?
-}
-
-#[allow(unused_must_use)]
-pub async fn consume_message<'a, F>(
-  ctx: &'a Context,
-  msg: &Message,
-  create_embed: F,
-) where
-  F: FnOnce(&mut CreateEmbed) -> &mut CreateEmbed,
-{
-  msg
-    .channel_id
-    .send_message(&ctx.http, |m| m.embed(create_embed));
 }
 
 async fn bot_owners(token: &str) -> HashSet<UserId> {
