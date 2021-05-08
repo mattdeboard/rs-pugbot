@@ -39,10 +39,10 @@ pub async fn update_members(
       .collect();
     let embed_color = Colour::from_rgb(165, 255, 241);
     let author = msg.author.clone();
-    if send_embed {
-      if game.phase == Some(Phases::PlayerRegistration) {
-        match game.draft_pool.add_member(author) {
-          Ok(_) => {
+    if game.phase == Some(Phases::PlayerRegistration) {
+      match game.draft_pool.add_member(author) {
+        Ok(_) => {
+          if send_embed {
             msg.channel_id.send_message(&ctx.http, |m| {
               m.embed(|e| {
                 e.color(embed_color);
@@ -57,7 +57,9 @@ pub async fn update_members(
               })
             });
           }
-          Err(_) => {
+        }
+        _ => {
+          if send_embed {
             msg.channel_id.send_message(&ctx.http, |m| {
               m.embed(|e| {
                 e.color(embed_color);
@@ -70,7 +72,9 @@ pub async fn update_members(
             });
           }
         }
-      } else {
+      }
+    } else {
+      if send_embed {
         msg.channel_id.send_message(&ctx.http, |m| {
           m.embed(|e| {
             e.color(embed_color);
@@ -94,41 +98,57 @@ pub async fn update_members(
 mod tests {
   use serde;
   use serde_json;
-  use serenity::{self};
+  use serenity::{self, client::Context};
 
   use self::serde::de::Deserialize;
   use self::serde_json::Value;
-  use crate::models::draft_pool::DraftPool;
   use crate::models::game::{Game, Phases};
+  use crate::models::{draft_pool::DraftPool, game::GameContainer};
   use crate::{commands, struct_from_json};
   use serenity::model::channel::Message;
   use std::env;
   use std::fs::File;
 
+  fn context() -> Box<Context> {
+    let context = commands::mock_context::tests::mock_context();
+    {
+      let game = Game::new(
+        vec![],
+        DraftPool::new(vec![], 12),
+        1,
+        Vec::new(),
+        // Draft pool max size: 12 (2 * 6)
+        2,
+        6,
+      );
+      let mut data = tokio_test::block_on(context.data.write());
+      data.insert::<GameContainer>(game);
+    }
+    Box::new(context)
+  }
+
+  #[allow(unused_must_use)]
   #[test]
   fn test_update_members() {
-    let context = commands::mock_context::tests::mock_context();
     let message = struct_from_json!(Message, "message");
     let key = "TEAM_SIZE";
     env::set_var(key, "1");
-    let game = &mut Game::new(
-      vec![],
-      DraftPool::new(vec![], 12),
-      1,
-      Vec::new(),
-      // Draft pool max size: 12 (2 * 6)
-      2,
-      6,
-    );
-    assert_eq!(game.phase, Some(Phases::PlayerRegistration));
-    let members = tokio_test::block_on(commands::add::update_members(
-      &context, &message, false,
-    ));
-    // There should be one member in the members vec to start with: our test
-    // user. `update_members` above should add an additional user, the
-    // author of the message (which is defined in
-    // src/tests/resources/message.json).
-    assert_eq!(members.len(), 2);
-    assert_eq!(game.phase, Some(Phases::PlayerRegistration));
+    let context = context();
+    let data = tokio_test::block_on(context.data.write());
+    let game = data.get::<GameContainer>();
+
+    if let Some(g) = game {
+      assert_eq!(g.phase, Some(Phases::PlayerRegistration));
+      async {
+        let members =
+          commands::add::update_members(&context, &message, false).await;
+        // There should be one member in the members vec to start with: our test
+        // user. `update_members` above should add an additional user, the
+        // author of the message (which is defined in
+        // src/tests/resources/message.json).
+        assert_eq!(members.len(), 2);
+      };
+      assert_eq!(g.phase, Some(Phases::PlayerRegistration));
+    }
   }
 }
