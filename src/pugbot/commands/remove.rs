@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use crate::models::game::GameContainer;
 use crate::{queue_size, traits::has_members::HasMembers};
 use serenity::model::channel::Message;
