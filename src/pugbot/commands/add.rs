@@ -109,7 +109,7 @@ mod tests {
   use std::env;
   use std::fs::File;
 
-  fn context() -> Box<Context> {
+  fn test_context() -> Box<Context> {
     let context = commands::mock_context::tests::mock_context();
     {
       let game = Game::new(
@@ -133,7 +133,7 @@ mod tests {
     let message = struct_from_json!(Message, "message");
     let key = "TEAM_SIZE";
     env::set_var(key, "1");
-    let context = context();
+    let context = test_context();
     let data = tokio_test::block_on(context.data.write());
     let game = data.get::<GameContainer>();
 
