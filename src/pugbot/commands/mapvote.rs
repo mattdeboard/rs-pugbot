@@ -81,7 +81,6 @@ pub async fn map_vote(
               .title(format!("The winning map is {:?}!", game.active_map))
           })
         });
-        // consume_message(ctx, msg, |_| game.map_winner_embed(&164, &255, &241));
       }
       Ok(())
     } else {

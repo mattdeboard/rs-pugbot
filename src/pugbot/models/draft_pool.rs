@@ -61,7 +61,7 @@ impl HasMembers for DraftPool {
     Ok(self.members.len())
   }
 
-  fn remove_member(&mut self, user: User) -> Result<usize, &str> {
+  fn remove_member(&mut self, user: &User) -> Result<usize, &str> {
     self.members.retain(|m| m.id != user.id);
     self.members.dedup();
     Ok(self.members.len())

@@ -27,33 +27,41 @@ pub async fn remove_member(
   let game = data.get_mut::<GameContainer>().unwrap();
 
   let author = msg.author.clone();
-  if send_embed {
-    let embed_descrip: String = game
-      .draft_pool
-      .members
-      .clone()
-      .into_iter()
-      .map(|m| m.clone().name)
-      .collect();
-    let embed_color = Colour::from_rgb(165, 255, 241);
-    msg.channel_id.send_message(&ctx.http, |m| {
-      m.embed(|e| {
-        let mut cea = CreateEmbedAuthor::default();
-        cea.name(&author.name);
-        cea.icon_url(&author.avatar_url().unwrap_or("No Avatar".to_string()));
-        e.set_author(cea);
-        e.color(embed_color);
-        e.description(embed_descrip);
-        e.footer(|f| {
-          f.text(format!(
-            "{} of {} users in queue",
-            game.draft_pool.members.len(),
-            queue_size()
-          ))
-        })
-      })
-    });
+  if let Ok(_) = game.draft_pool.remove_member(&author) {
+    let next_id = game.turn_taker.next().unwrap();
+    if let Ok(_) = game.teams[next_id as usize].remove_member(&author) {
+      if send_embed {
+        let embed_descrip: String = game
+          .draft_pool
+          .members
+          .clone()
+          .into_iter()
+          .map(|m| m.clone().name)
+          .collect();
+        let embed_color = Colour::from_rgb(165, 255, 241);
+        msg.channel_id.send_message(&ctx.http, |m| {
+          m.embed(|e| {
+            let mut cea = CreateEmbedAuthor::default();
+            cea.name(&author.name);
+            cea.icon_url(
+              &author.avatar_url().unwrap_or("No Avatar".to_string()),
+            );
+            e.set_author(cea);
+            e.color(embed_color);
+            e.description(embed_descrip);
+            e.footer(|f| {
+              f.text(format!(
+                "{} of {} users in queue",
+                game.draft_pool.members.len(),
+                queue_size()
+              ))
+            })
+          })
+        });
+      }
+    }
   }
+
   game.draft_pool.members()
 }
 
