@@ -123,9 +123,10 @@ mod tests {
 
   #[test]
   fn test_pick_player() {
-    // let context = commands::mock_context::tests::mock_context();
+    let context = commands::mock_context::tests::mock_context();
     let authors: Vec<User> = struct_from_json!(Vec, "authors");
     let (team_count, team_size) = (2, (authors.len() / 2) as u32);
+    println!("Team size: {}", team_size);
     // Choosing 2 teams of 5 here since there are 10 authors in authors.json
     let game = &mut Game::new(
       vec![],
@@ -141,18 +142,20 @@ mod tests {
     assert_eq!(game.select_captains(), Ok(()));
 
     // Make a random selection from available players
-    // let pool = game.draft_pool.available_players.clone();
+    let pool = game.draft_pool.available_players.clone();
 
-    // if let Some(key) = pool.keys().next() {
-    //   if let Some(_user) = game.draft_pool.available_players.get(key) {
-    //     let message = struct_from_json!(Message, "message");
-    //     // Drafting a single player works as expected?
-    //     assert_eq!(
-    //       commands::pick::draft_player(&context, &message, false, *key),
-    //       Ok(())
-    //     );
-    //   }
-    // }
+    if let Some(key) = pool.keys().next() {
+      if let Some(_user) = game.draft_pool.available_players.get(key) {
+        let message = struct_from_json!(Message, "message");
+        // Drafting a single player works as expected?
+        async {
+          assert_eq!(
+            commands::pick::draft_player(&context, &message, false, *key).await,
+            Ok(())
+          )
+        };
+      }
+    }
 
     // There should be as many teams as specified.
     assert_eq!(game.teams.len() as u32, team_count);
