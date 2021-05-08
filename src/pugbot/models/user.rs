@@ -9,7 +9,7 @@ use serenity::model::user::User;
 
 #[derive(Debug)]
 pub struct DiscordUser {
-  pub id: UserId,
+  pub user_id: i32,
   pub discord_user_id: UserId,
   pub bot: bool,
   pub discriminator: u16,
@@ -30,7 +30,8 @@ impl<'a> Insertable<users::table> for &'a User {
       users::bot.eq(self.bot),
       users::discriminator.eq(self.discriminator as i32),
       users::name.eq(&self.name),
-      users::discord_user_id.eq(self.id.0 as i32),
+      // XXX: seems a little risky to cast this.
+      users::discord_user_id.eq(*self.id.as_u64() as i32),
     )
       .values()
   }
@@ -38,13 +39,23 @@ impl<'a> Insertable<users::table> for &'a User {
 
 impl From<DiscordUser> for User {
   fn from(discord_user: DiscordUser) -> User {
-    User {
-      id: discord_user.discord_user_id,
-      bot: discord_user.bot,
-      discriminator: discord_user.discriminator,
-      name: discord_user.name,
-      avatar: discord_user.avatar,
-    }
+    // `User` is set as non-exhaustive, which means the compiler enforces the
+    // assumption that *we* can never know what all the fields will be.
+    // To construct this we need to start from the empty `Default` to mitigate
+    // the risk of having uninitialized fields and satisfy the compiler.
+    let mut user = User::default();
+
+    // XXX: seems like `UserId::to_user()` could be used to avoid keeping all
+    // this data in the local DB. I think the Http Client supports some kind of
+    // cache...
+
+    user.id = discord_user.discord_user_id;
+    user.bot = discord_user.bot;
+    user.discriminator = discord_user.discriminator;
+    user.name = discord_user.name;
+    user.avatar = discord_user.avatar;
+
+    user
   }
 }
 
@@ -53,7 +64,7 @@ impl Queryable<users::SqlType, Pg> for DiscordUser {
 
   fn build((id, bot, discriminator, name, discord_user_id): Self::Row) -> Self {
     DiscordUser {
-      database_id: Some(id),
+      user_id: id,
       bot,
       name,
       discriminator: discriminator as u16,
@@ -67,7 +78,7 @@ impl From<DiscordUser> for UserRating {
   fn from(record: DiscordUser) -> UserRating {
     UserRating {
       id: None,
-      user_id: record.database_id.unwrap(),
+      user_id: record.user_id,
       rating: None,
       deviation: None,
       volatility: None,
