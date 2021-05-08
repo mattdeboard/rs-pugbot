@@ -68,7 +68,13 @@ pub async fn draft_player(
     let err =
       "The user selected for drafting has been drafted or is otherwise invalid";
     if send_embed {
-      // consume_message(ctx, msg, |_| &mut error_embed(err));
+      msg.channel_id.send_message(&ctx.http, |m| {
+        m.embed(|create_embed| {
+          create_embed.color(embed_color);
+          create_embed.description(String::from(err));
+          create_embed.title(String::from("ERROR"))
+        })
+      });
     }
     return Err(err);
   }
