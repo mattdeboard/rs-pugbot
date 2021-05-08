@@ -65,34 +65,45 @@ mod tests {
 
   use self::serde::de::Deserialize;
   use self::serde_json::Value;
-  use crate::models::draft_pool::DraftPool;
   use crate::models::game::{Game, Phases};
+  use crate::models::{draft_pool::DraftPool, game::GameContainer};
   use crate::{commands, struct_from_json};
   use serenity::model::channel::Message;
   use std::fs::File;
 
-  // fn gen_test_user(id: Option<UserId>) -> DiscordUser {
-  //   DiscordUser {
-  //     id: match id {
-  //       Some(user_id) => user_id,
-  //       None => UserId(210),
-  //     },
-  //     avatar: Some("abc".to_string()),
-  //     bot: false,
-  //     discriminator: 1432,
-  //     name: "TestUser".to_string(),
-  //     discord_user_id: UserId::from_str("1").unwrap(),
-  //   }
-  // }
+  fn test_context() -> Box<serenity::client::Context> {
+    let context = commands::mock_context::tests::mock_context();
+    {
+      let game = Game::new(
+        vec![],
+        DraftPool::new(vec![], 12),
+        1,
+        Vec::new(),
+        // Draft pool max size: 12 (2 * 6)
+        2,
+        6,
+      );
+      let mut data = tokio_test::block_on(context.data.write());
+      data.insert::<GameContainer>(game);
+    }
+    Box::new(context)
+  }
 
+  #[allow(unused_must_use)]
   #[test]
   fn test_remove_member() {
-    let context = commands::mock_context::tests::mock_context();
+    let context = test_context();
     let message = struct_from_json!(Message, "message");
-    let game =
-      &mut Game::new(vec![], DraftPool::new(vec![], 12), 1, Vec::new(), 2, 6);
-    assert_eq!(game.phase, Some(Phases::PlayerRegistration));
-    let members = commands::remove::remove_member(&context, &message, false);
-    assert_eq!(tokio_test::block_on(members).len(), 0);
+    let mut data = tokio_test::block_on(context.data.write());
+    let the_game = data.get_mut::<GameContainer>();
+
+    if let Some(game) = the_game {
+      assert_eq!(game.phase, Some(Phases::PlayerRegistration));
+      async {
+        let members =
+          commands::remove::remove_member(&context, &message, false).await;
+        assert_eq!(members.len(), 0);
+      };
+    }
   }
 }
