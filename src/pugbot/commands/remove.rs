@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::models::game::GameContainer;
 use crate::{queue_size, traits::has_members::HasMembers};
 use serenity::model::channel::Message;
@@ -73,8 +75,11 @@ mod tests {
 
   use self::serde::de::Deserialize;
   use self::serde_json::Value;
-  use crate::models::game::{Game, Phases};
   use crate::models::{draft_pool::DraftPool, game::GameContainer};
+  use crate::models::{
+    game::{Game, Phases},
+    team::Team,
+  };
   use crate::{commands, struct_from_json};
   use serenity::model::channel::Message;
   use std::fs::File;
@@ -84,7 +89,18 @@ mod tests {
     let context = commands::mock_context::tests::mock_context();
     {
       let game = Game::new(
-        vec![],
+        vec![
+          Team {
+            id: 1,
+            captain: None,
+            members: vec![],
+          },
+          Team {
+            id: 2,
+            captain: None,
+            members: vec![],
+          },
+        ],
         DraftPool::new(vec![msg.author.clone()], 12),
         1,
         Vec::new(),
@@ -103,15 +119,25 @@ mod tests {
   async fn test_remove_member() {
     let message = struct_from_json!(Message, "message");
     let context = test_context(&message).await;
-    let mut data = context.data.write().await;
-    let the_game = data.get_mut::<GameContainer>();
 
-    if let Some(game) = the_game {
-      assert_eq!(game.phase, Some(Phases::PlayerRegistration));
-      // Precondition. Draft pool should have 1 member, the author of
-      // the message.
-      assert_eq!(game.draft_pool.members.len(), 1);
-      commands::remove::remove_member(&context, &message, false).await;
+    {
+      let mut data = context.data.write().await;
+      if let Some(game) = data.get_mut::<GameContainer>() {
+        assert_eq!(game.phase, Some(Phases::PlayerRegistration));
+        // Precondition. Draft pool should have 1 member, the author of
+        // the message.
+        assert_eq!(game.draft_pool.members.len(), 1);
+      }
+    }
+    {
+      let members =
+        commands::remove::remove_member(&context, &message, false).await;
+      assert_eq!(members.len(), 0);
+    }
+
+    let mut data = context.data.write().await;
+
+    if let Some(game) = data.get_mut::<GameContainer>() {
       // Post condition. Pool should now be empty.
       assert_eq!(game.draft_pool.members.len(), 0);
     }
