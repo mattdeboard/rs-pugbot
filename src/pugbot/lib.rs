@@ -107,9 +107,9 @@ pub async fn client_setup() {
   let framework = StandardFramework::new()
     .configure(|c| c.owners(owners).prefix("~"))
     .help(&commands::HELP_CMD)
-    .group(&MAPVOTING_GROUP)
-    .group(&PLAYERDRAFTING_GROUP)
-    .group(&PLAYERREGISTRATION_GROUP);
+    .group(&command_groups::map_voting::MAPVOTING_GROUP)
+    .group(&command_groups::player_drafting::PLAYERDRAFTING_GROUP)
+    .group(&command_groups::player_registration::PLAYERREGISTRATION_GROUP);
 
   let mut client = Client::builder(&token)
     .event_handler(Handler)
