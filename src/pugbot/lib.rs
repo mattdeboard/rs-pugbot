@@ -16,9 +16,6 @@ pub mod models;
 pub mod schema;
 pub mod traits;
 
-use crate::command_groups::{
-  map_voting::*, player_drafting::*, player_registration::*,
-};
 use crate::models::draft_pool::DraftPool;
 use crate::models::game::{Game, GameContainer};
 
