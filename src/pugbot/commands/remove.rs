@@ -25,40 +25,41 @@ pub async fn remove_member(
 ) -> Vec<User> {
   let mut data = ctx.data.write().await;
   let game = data.get_mut::<GameContainer>().unwrap();
-
   let author = msg.author.clone();
+
   if let Ok(_) = game.draft_pool.remove_member(&author) {
     let next_id = game.turn_taker.next().unwrap();
-    if let Ok(_) = game.teams[next_id as usize].remove_member(&author) {
-      if send_embed {
-        let embed_descrip: String = game
-          .draft_pool
-          .members
-          .clone()
-          .into_iter()
-          .map(|m| m.clone().name)
-          .collect();
-        let embed_color = Colour::from_rgb(165, 255, 241);
-        msg.channel_id.send_message(&ctx.http, |m| {
-          m.embed(|e| {
-            let mut cea = CreateEmbedAuthor::default();
-            cea.name(&author.name);
-            cea.icon_url(
-              &author.avatar_url().unwrap_or("No Avatar".to_string()),
-            );
-            e.set_author(cea);
-            e.color(embed_color);
-            e.description(embed_descrip);
-            e.footer(|f| {
-              f.text(format!(
-                "{} of {} users in queue",
-                game.draft_pool.members.len(),
-                queue_size()
-              ))
-            })
+
+    if let Some(next_team) = game.teams.get_mut(next_id as usize) {
+      next_team.remove_member(&author);
+    }
+
+    if send_embed {
+      let embed_descrip: String = game
+        .draft_pool
+        .members
+        .clone()
+        .into_iter()
+        .map(|m| m.clone().name)
+        .collect();
+      let embed_color = Colour::from_rgb(165, 255, 241);
+      msg.channel_id.send_message(&ctx.http, |m| {
+        m.embed(|e| {
+          let mut cea = CreateEmbedAuthor::default();
+          cea.name(&author.name);
+          cea.icon_url(&author.avatar_url().unwrap_or("No Avatar".to_string()));
+          e.set_author(cea);
+          e.color(embed_color);
+          e.description(embed_descrip);
+          e.footer(|f| {
+            f.text(format!(
+              "{} of {} users in queue",
+              game.draft_pool.members.len(),
+              queue_size()
+            ))
           })
-        });
-      }
+        })
+      });
     }
   }
 
@@ -78,8 +79,9 @@ mod tests {
   use crate::{commands, struct_from_json};
   use serenity::model::channel::Message;
   use std::fs::File;
+  use tokio;
 
-  fn test_context(msg: &Message) -> Box<serenity::client::Context> {
+  async fn test_context(msg: &Message) -> serenity::client::Context {
     let context = commands::mock_context::tests::mock_context();
     {
       let game = Game::new(
@@ -91,30 +93,37 @@ mod tests {
         2,
         6,
       );
-      let mut data = tokio_test::block_on(context.data.write());
+      let mut data = context.data.write().await;
       data.insert::<GameContainer>(game);
     }
-    Box::new(context)
+    context
   }
 
-  #[allow(unused_must_use)]
-  #[test]
-  fn test_remove_member() {
+  #[tokio::test]
+  async fn test_remove_member() {
     let message = struct_from_json!(Message, "message");
-    let context = test_context(&message);
-    let mut data = tokio_test::block_on(context.data.write());
-    let the_game = data.get_mut::<GameContainer>();
+    let context = test_context(&message).await;
 
-    if let Some(game) = the_game {
-      assert_eq!(game.phase, Some(Phases::PlayerRegistration));
-      async {
+    {
+      let data = context.data.read().await;
+      if let Some(game) = data.get::<GameContainer>() {
+        assert_eq!(game.phase, Some(Phases::PlayerRegistration));
         // Precondition. Draft pool should have 1 member, the author of
         // the message.
         assert_eq!(game.draft_pool.members.len(), 1);
+      }
+    }
+    {
+      let members =
         commands::remove::remove_member(&context, &message, false).await;
-        // Post condition. Pool should now be empty.
-        assert_eq!(game.draft_pool.members.len(), 0);
-      };
+      assert_eq!(members.len(), 0);
+    }
+
+    let data = context.data.read().await;
+
+    if let Some(game) = data.get::<GameContainer>() {
+      // Post condition. Pool should now be empty.
+      assert_eq!(game.draft_pool.members.len(), 0);
     }
   }
 }

@@ -87,7 +87,6 @@ pub async fn update_members(
         });
       }
     }
-
     game.next_phase();
     return game.draft_pool.members();
   };
@@ -98,7 +97,7 @@ pub async fn update_members(
 mod tests {
   use serde;
   use serde_json;
-  use serenity::{self, client::Context};
+  use serenity::{self, client::Context, model::prelude::User};
 
   use self::serde::de::Deserialize;
   use self::serde_json::Value;
@@ -109,46 +108,51 @@ mod tests {
   use std::env;
   use std::fs::File;
 
-  fn test_context() -> Box<Context> {
+  async fn test_context() -> Context {
     let context = commands::mock_context::tests::mock_context();
     {
       let game = Game::new(
         vec![],
-        DraftPool::new(vec![], 12),
+        DraftPool::new(vec![User::default()], 12),
         1,
         Vec::new(),
         // Draft pool max size: 12 (2 * 6)
         2,
         6,
       );
-      let mut data = tokio_test::block_on(context.data.write());
+      let mut data = context.data.write().await;
       data.insert::<GameContainer>(game);
     }
-    Box::new(context)
+    context
   }
 
   #[allow(unused_must_use)]
-  #[test]
-  fn test_update_members() {
+  #[tokio::test]
+  async fn test_update_members() {
     let message = struct_from_json!(Message, "message");
     let key = "TEAM_SIZE";
     env::set_var(key, "1");
-    let context = test_context();
-    let data = tokio_test::block_on(context.data.write());
-    let game = data.get::<GameContainer>();
+    let context = test_context().await;
+    {
+      let data = context.data.read().await;
+      if let Some(game) = data.get::<GameContainer>() {
+        assert_eq!(game.phase, Some(Phases::PlayerRegistration));
+      }
+    }
 
-    if let Some(g) = game {
-      assert_eq!(g.phase, Some(Phases::PlayerRegistration));
-      async {
-        let members =
-          commands::add::update_members(&context, &message, false).await;
-        // There should be one member in the members vec to start with: our test
-        // user. `update_members` above should add an additional user, the
-        // author of the message (which is defined in
-        // src/tests/resources/message.json).
-        assert_eq!(members.len(), 2);
-      };
-      assert_eq!(g.phase, Some(Phases::PlayerRegistration));
+    {
+      let members =
+        commands::add::update_members(&context, &message, false).await;
+      // There should be one member in the members vec to start with: our test
+      // user. `update_members` above should add an additional user, the
+      // author of the message (which is defined in
+      // src/tests/resources/message.json).
+      assert_eq!(members.len(), 2);
+    }
+
+    let data = context.data.read().await;
+    if let Some(game) = data.get::<GameContainer>() {
+      assert_eq!(game.phase, Some(Phases::PlayerRegistration));
     }
   }
 }

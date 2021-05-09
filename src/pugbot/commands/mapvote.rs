@@ -118,55 +118,85 @@ mod tests {
   use serenity::{client::Context, model::channel::Message};
   use std::fs::File;
 
-  fn test_context(authors: Vec<User>, maps: Vec<GameMap>) -> Box<Context> {
+  async fn test_context(authors: Vec<User>, maps: Vec<GameMap>) -> Context {
     let context = commands::mock_context::tests::mock_context();
     let user_count = authors.len() as u32;
     {
       let game = Game::new(
         vec![],
-        DraftPool::new(authors, 12),
+        DraftPool::new(authors, 2 * user_count / 2),
         1,
         maps,
-        // Draft pool max size: 12 (2 * 6)
         2,
         user_count / 2,
       );
-      let mut data = tokio_test::block_on(context.data.write());
+      let mut data = context.data.write().await;
       data.insert::<GameContainer>(game);
     }
-    Box::new(context)
+    context
   }
 
-  #[test]
-  fn test_register_vote() {
+  #[tokio::test]
+  async fn test_register_vote() {
     let authors: Vec<User> = struct_from_json!(Vec, "authors");
     let maps: Vec<GameMap> = struct_from_json!(Vec, "maps");
-    let context = test_context(authors, maps);
-    let mut data = tokio_test::block_on(context.data.write());
-    let the_game = data.get_mut::<GameContainer>();
+    let context = test_context(authors, maps).await;
+    let message = struct_from_json!(Message, "message");
+    let candidate_map_idx = 1;
 
-    if let Some(game) = the_game {
-      game.next_phase();
-      game.select_captains();
+    // First, we retrieve the pool of available players. We need the
+    // write lock on `context.data` so this has to happen inside a
+    // block. This is because the commands also need the exclusive lock
+    // on `context.data`. So those two have to be isolated from each
+    // other.
+    let pool = {
+      let mut data = context.data.write().await;
+      if let Some(game) = data.get_mut::<GameContainer>() {
+        // Now we set up our test conditions:
+        // 1. Advance the game state "phase machine" via `next_phase`
+        // 2. Randomly select two captains from the draft pool via
+        //    `select_captains`.
+        game.next_phase();
+        game.select_captains();
 
-      let player_pool = game.draft_pool.available_players.clone();
-      let message = struct_from_json!(Message, "message");
-
-      // Populate the draft pool.
-      for (key, _) in player_pool.iter() {
-        commands::pick::draft_player(&context, &message, false, *key);
+        Some(game.draft_pool.available_players.clone())
+      } else {
+        None
       }
+    };
 
-      // This is the key of the game map we're voting for in this test.
-      let candidate_map_idx = 1;
-      let mut counter = 0;
-      // We register a map vote for each player here.
-      async {
-        for _ in 0..(game.team_count * game.team_size) {
-          // Precondition. We should be in the right phase every time.
-          assert_eq!(game.phase, Some(Phases::MapSelection));
-          // Precondition. The count of votes should be what we expect.
-          assert_eq!(game.map_votes.get(&candidate_map_idx), Some(&counter));
+    // And now, we populate our teams with the players from the draft
+    // pool. Here, `draft_player` requires an exclusive lock on
+    // `context.data` so it's inside a block.
+    {
+      if let Some(player_pool) = pool {
+        for (key, _) in player_pool.iter() {
+          commands::pick::draft_player(&context, &message, false, *key).await;
+        }
+      }
+    }
+
+    // Confirm we're on the phase we ought to be: `MapSelection`
+    {
+      let data = context.data.read().await;
+      if let Some(game) = data.get::<GameContainer>() {
+        assert_eq!(game.phase, Some(Phases::MapSelection));
+      }
+    }
+
+    let team_metadata = {
+      let data = context.data.read().await;
+      if let Some(game) = data.get::<GameContainer>() {
+        Some((game.team_size, game.team_count))
+      } else {
+        None
+      }
+    };
+
+    // Register a map vote for every drafted player
+    {
+      if let Some((team_size, team_count)) = team_metadata {
+        for _ in 0..(team_count * team_size) {
           commands::mapvote::map_vote(
             &context,
             &message,
@@ -174,15 +204,13 @@ mod tests {
             candidate_map_idx,
           )
           .await;
-          // Postcondition. The count of votes for this particular map should be one
-          // higher now.
-          assert_eq!(
-            game.map_votes.get(&candidate_map_idx),
-            Some(&(counter + 1))
-          );
-          counter += 1;
         }
+      }
+    }
 
+    {
+      let data = context.data.read().await;
+      if let Some(game) = data.get::<GameContainer>() {
         let vote_counts: i32 = game
           .map_votes
           .values()
@@ -196,7 +224,7 @@ mod tests {
         // The game should advance to the next phase since all the votes have been
         // tallied.
         assert_eq!(game.phase, Some(Phases::ResultRecording));
-      };
+      }
     }
   }
 }
