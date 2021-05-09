@@ -105,8 +105,8 @@ mod tests {
     let context = test_context(&message).await;
 
     {
-      let mut data = context.data.write().await;
-      if let Some(game) = data.get_mut::<GameContainer>() {
+      let data = context.data.read().await;
+      if let Some(game) = data.get::<GameContainer>() {
         assert_eq!(game.phase, Some(Phases::PlayerRegistration));
         // Precondition. Draft pool should have 1 member, the author of
         // the message.
@@ -119,9 +119,9 @@ mod tests {
       assert_eq!(members.len(), 0);
     }
 
-    let mut data = context.data.write().await;
+    let data = context.data.read().await;
 
-    if let Some(game) = data.get_mut::<GameContainer>() {
+    if let Some(game) = data.get::<GameContainer>() {
       // Post condition. Pool should now be empty.
       assert_eq!(game.draft_pool.members.len(), 0);
     }

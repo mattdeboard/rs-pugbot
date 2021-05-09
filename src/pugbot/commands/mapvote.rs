@@ -178,15 +178,15 @@ mod tests {
 
     // Confirm we're on the phase we ought to be: `MapSelection`
     {
-      let mut data = context.data.write().await;
-      if let Some(game) = data.get_mut::<GameContainer>() {
+      let data = context.data.read().await;
+      if let Some(game) = data.get::<GameContainer>() {
         assert_eq!(game.phase, Some(Phases::MapSelection));
       }
     }
 
     let team_metadata = {
-      let mut data = context.data.write().await;
-      if let Some(game) = data.get_mut::<GameContainer>() {
+      let data = context.data.read().await;
+      if let Some(game) = data.get::<GameContainer>() {
         Some((game.team_size, game.team_count))
       } else {
         None
@@ -209,8 +209,8 @@ mod tests {
     }
 
     {
-      let mut data = context.data.write().await;
-      if let Some(game) = data.get_mut::<GameContainer>() {
+      let data = context.data.read().await;
+      if let Some(game) = data.get::<GameContainer>() {
         let vote_counts: i32 = game
           .map_votes
           .values()

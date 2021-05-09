@@ -134,7 +134,7 @@ mod tests {
     env::set_var(key, "1");
     let context = test_context().await;
     {
-      let data = context.data.write().await;
+      let data = context.data.read().await;
       if let Some(game) = data.get::<GameContainer>() {
         assert_eq!(game.phase, Some(Phases::PlayerRegistration));
       }
@@ -150,7 +150,7 @@ mod tests {
       assert_eq!(members.len(), 2);
     }
 
-    let data = context.data.write().await;
+    let data = context.data.read().await;
     if let Some(game) = data.get::<GameContainer>() {
       assert_eq!(game.phase, Some(Phases::PlayerRegistration));
     }

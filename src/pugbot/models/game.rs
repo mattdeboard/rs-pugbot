@@ -266,9 +266,7 @@ pub mod tests {
   async fn test_game_next_phase_empty_queue() {
     let context = test_context(None).await;
     let mut data = context.data.write().await;
-    let the_game = data.get_mut::<GameContainer>();
-
-    if let Some(game) = the_game {
+    if let Some(game) = data.get_mut::<GameContainer>() {
       assert_eq!(game.phase, Some(Phases::PlayerRegistration));
       game.next_phase();
       // Invoking next_phase should just keep returning PlayerRegistration since
@@ -297,8 +295,8 @@ pub mod tests {
     let message = struct_from_json!(Message, "message");
 
     {
-      let mut data = context.data.write().await;
-      if let Some(game) = data.get_mut::<GameContainer>() {
+      let data = context.data.read().await;
+      if let Some(game) = data.get::<GameContainer>() {
         assert_eq!(game.phase, Some(Phases::PlayerRegistration));
       }
     }
