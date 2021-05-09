@@ -148,6 +148,7 @@ impl Phased for Game {
         // If the draft pool is NOT full, do not advance to the next phase. "Not
         // advancing to the next phase" is equivalent to returning
         // `Phases::PlayerRegistration` as the phase.
+        println!("Draft Pool size: {}", self.draft_pool.members().len());
         if self.draft_pool.members().len() as u32
           == self.team_count * self.team_size
         {
@@ -238,30 +239,34 @@ pub mod tests {
   use serenity::model::user::User;
   use std::fs::File;
 
-  fn test_context() -> Box<Context> {
+  async fn test_context(authors: Option<Vec<User>>) -> Box<Context> {
     let context = commands::mock_context::tests::mock_context();
+    let users = match authors {
+      Some(u) => u,
+      None => vec![],
+    };
     {
       let game = Game::new(
         vec![],
-        DraftPool::new(vec![], 12),
+        DraftPool::new(users, 12),
         1,
         Vec::new(),
         // Draft pool max size: 12 (2 * 6)
         2,
-        6,
+        5,
       );
-      let mut data = tokio_test::block_on(context.data.write());
+      let mut data = context.data.write().await;
       data.insert::<GameContainer>(game);
     }
     Box::new(context)
   }
 
-  #[test]
+  #[tokio::test]
   /// Test what should happen when next_phase is called in PlayerRegistration
   /// phase and there is still room in the queue.
-  fn test_game_next_phase_empty_queue() {
-    let context = test_context();
-    let mut data = tokio_test::block_on(context.data.write());
+  async fn test_game_next_phase_empty_queue() {
+    let context = test_context(None).await;
+    let mut data = context.data.write().await;
     let the_game = data.get_mut::<GameContainer>();
 
     if let Some(game) = the_game {
@@ -286,28 +291,43 @@ pub mod tests {
     assert_eq!(game.phase, Some(Phases::CaptainSelection));
   }
 
-  #[test]
-  fn test_select_captains() {
-    let context = test_context();
-    let mut data = tokio_test::block_on(context.data.write());
-    let the_game = data.get_mut::<GameContainer>();
+  #[tokio::test]
+  async fn test_select_captains() {
+    let authors: Vec<User> = struct_from_json!(Vec, "authors");
+    let context = test_context(Some((&authors[1..]).to_vec())).await;
     let message = struct_from_json!(Message, "message");
-    if let Some(game) = the_game {
-      assert_eq!(game.phase, Some(Phases::PlayerRegistration));
-      // Invoking update_members invoke the `next_phase` call, which should
-      // advance the phase.
-      async {
-        commands::add::update_members(&context, &message, false).await;
+
+    {
+      let mut data = context.data.write().await;
+      if let Some(game) = data.get_mut::<GameContainer>() {
+        assert_eq!(game.phase, Some(Phases::PlayerRegistration));
+      }
+    }
+    // Invoking update_members invoke the `next_phase` call, which should
+    // advance the phase.
+    commands::add::update_members(&context, &message, false).await;
+
+    {
+      let mut data = context.data.write().await;
+      if let Some(game) = data.get_mut::<GameContainer>() {
         assert_eq!(game.phase, Some(Phases::CaptainSelection));
-        // Advancing to `CaptainSelection` should build the available_players
-        // HashMap.
-        assert_eq!(game.draft_pool.available_players.len(), 2);
+        // This call should result in the available_players pool size
+        // decreasing by `game.team_count`. This is because each team
+        // needs a captain: The captains are randomly selected and drawn
+        // from `game.draft_pool.available_players` pool.
         game.select_captains();
-        // There should now be one team built, with only one team member, leaving
-        // one available player.
-        assert_eq!(game.draft_pool.available_players.len(), 1);
-        assert_eq!(game.teams.len(), 1);
-      };
+        assert_eq!(
+          game.draft_pool.available_players.len(),
+          (
+            // Maximum pool size
+            game.team_count * game.team_size -
+            // One captain per team should be removed from the
+            // `available_players` pool.
+            game.team_count
+          ) as usize
+        );
+        assert_eq!(game.teams.len(), game.team_count as usize);
+      }
     }
   }
 

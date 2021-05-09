@@ -87,7 +87,6 @@ pub async fn update_members(
         });
       }
     }
-
     game.next_phase();
     return game.draft_pool.members();
   };

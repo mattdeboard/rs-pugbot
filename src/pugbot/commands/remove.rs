@@ -29,36 +29,37 @@ pub async fn remove_member(
 
   if let Ok(_) = game.draft_pool.remove_member(&author) {
     let next_id = game.turn_taker.next().unwrap();
-    if let Ok(_) = game.teams[next_id as usize].remove_member(&author) {
-      if send_embed {
-        let embed_descrip: String = game
-          .draft_pool
-          .members
-          .clone()
-          .into_iter()
-          .map(|m| m.clone().name)
-          .collect();
-        let embed_color = Colour::from_rgb(165, 255, 241);
-        msg.channel_id.send_message(&ctx.http, |m| {
-          m.embed(|e| {
-            let mut cea = CreateEmbedAuthor::default();
-            cea.name(&author.name);
-            cea.icon_url(
-              &author.avatar_url().unwrap_or("No Avatar".to_string()),
-            );
-            e.set_author(cea);
-            e.color(embed_color);
-            e.description(embed_descrip);
-            e.footer(|f| {
-              f.text(format!(
-                "{} of {} users in queue",
-                game.draft_pool.members.len(),
-                queue_size()
-              ))
-            })
+
+    if let Some(next_team) = game.teams.get_mut(next_id as usize) {
+      next_team.remove_member(&author);
+    }
+
+    if send_embed {
+      let embed_descrip: String = game
+        .draft_pool
+        .members
+        .clone()
+        .into_iter()
+        .map(|m| m.clone().name)
+        .collect();
+      let embed_color = Colour::from_rgb(165, 255, 241);
+      msg.channel_id.send_message(&ctx.http, |m| {
+        m.embed(|e| {
+          let mut cea = CreateEmbedAuthor::default();
+          cea.name(&author.name);
+          cea.icon_url(&author.avatar_url().unwrap_or("No Avatar".to_string()));
+          e.set_author(cea);
+          e.color(embed_color);
+          e.description(embed_descrip);
+          e.footer(|f| {
+            f.text(format!(
+              "{} of {} users in queue",
+              game.draft_pool.members.len(),
+              queue_size()
+            ))
           })
-        });
-      }
+        })
+      });
     }
   }
 
@@ -73,11 +74,8 @@ mod tests {
 
   use self::serde::de::Deserialize;
   use self::serde_json::Value;
+  use crate::models::game::{Game, Phases};
   use crate::models::{draft_pool::DraftPool, game::GameContainer};
-  use crate::models::{
-    game::{Game, Phases},
-    team::Team,
-  };
   use crate::{commands, struct_from_json};
   use serenity::model::channel::Message;
   use std::fs::File;
@@ -87,18 +85,7 @@ mod tests {
     let context = commands::mock_context::tests::mock_context();
     {
       let game = Game::new(
-        vec![
-          Team {
-            id: 1,
-            captain: None,
-            members: vec![],
-          },
-          Team {
-            id: 2,
-            captain: None,
-            members: vec![],
-          },
-        ],
+        vec![],
         DraftPool::new(vec![msg.author.clone()], 12),
         1,
         Vec::new(),
