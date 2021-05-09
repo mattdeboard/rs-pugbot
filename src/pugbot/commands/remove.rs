@@ -1,19 +1,19 @@
 use crate::models::game::GameContainer;
 use crate::{queue_size, traits::has_members::HasMembers};
+use serenity::framework::standard::macros::command;
 use serenity::model::channel::Message;
 use serenity::model::user::User;
 use serenity::prelude::Context;
 use serenity::{
   builder::CreateEmbedAuthor, framework::standard::CommandResult,
 };
-use serenity::{framework::standard::macros::command, utils::Colour};
 
 #[command]
 #[aliases("r")]
 #[description("Removes yourself from the draft pool.")]
 #[allow(unused_must_use)]
 pub(crate) async fn remove(ctx: &Context, msg: &Message) -> CommandResult {
-  remove_member(ctx, msg, true);
+  remove_member(ctx, msg, true).await;
   Ok(())
 }
 
@@ -42,24 +42,28 @@ pub async fn remove_member(
         .into_iter()
         .map(|m| m.clone().name)
         .collect();
-      let embed_color = Colour::from_rgb(165, 255, 241);
-      msg.channel_id.send_message(&ctx.http, |m| {
-        m.embed(|e| {
-          let mut cea = CreateEmbedAuthor::default();
-          cea.name(&author.name);
-          cea.icon_url(&author.avatar_url().unwrap_or("No Avatar".to_string()));
-          e.set_author(cea);
-          e.color(embed_color);
-          e.description(embed_descrip);
-          e.footer(|f| {
-            f.text(format!(
-              "{} of {} users in queue",
-              game.draft_pool.members.len(),
-              queue_size()
-            ))
+      msg
+        .channel_id
+        .send_message(&ctx.http, |m| {
+          m.embed(|e| {
+            let mut cea = CreateEmbedAuthor::default();
+            cea.name(&author.name);
+            cea.icon_url(
+              &author.avatar_url().unwrap_or("No Avatar".to_string()),
+            );
+            e.set_author(cea);
+            e.color(super::SUCCESS_EMBED_COLOR);
+            e.description(embed_descrip);
+            e.footer(|f| {
+              f.text(format!(
+                "{} of {} users in queue",
+                game.draft_pool.members.len(),
+                queue_size()
+              ))
+            })
           })
         })
-      });
+        .await;
     }
   }
 

@@ -100,7 +100,7 @@ pub async fn client_setup() {
     .expect("Expected a token in the environment");
   let owners = bot_owners(&token).await;
   let framework = StandardFramework::new()
-    .configure(|c| c.owners(owners).prefix("~"))
+    .configure(|c| c.owners(owners))
     .help(&commands::HELP_CMD)
     .group(&command_groups::map_voting::MAPVOTING_GROUP)
     .group(&command_groups::player_drafting::PLAYERDRAFTING_GROUP)
