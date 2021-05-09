@@ -99,7 +99,6 @@ mod tests {
     context
   }
 
-  // #[allow(unused_must_use)]
   #[tokio::test]
   async fn test_remove_member() {
     let message = struct_from_json!(Message, "message");

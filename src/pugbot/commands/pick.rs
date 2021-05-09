@@ -78,7 +78,7 @@ pub async fn draft_player(
     }
     return Err(err);
   }
-
+  println!("Phase: {:?}", game.phase);
   game.next_phase();
 
   if game.phase == Some(Phases::MapSelection) && send_embed {
