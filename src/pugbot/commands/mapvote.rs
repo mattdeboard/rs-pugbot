@@ -1,23 +1,58 @@
 use crate::models::game::GameContainer;
 use crate::models::game::Phases;
 use crate::traits::phased::Phased;
+use serenity::framework::standard::macros::command;
+use serenity::framework::standard::{Args, CommandResult};
 use serenity::model::channel::Message;
 use serenity::prelude::Context;
-use serenity::{framework::standard::macros::command, utils::Colour};
-use serenity::{
-  framework::standard::{Args, CommandResult},
-  utils::Color,
-};
 
 #[command]
 #[aliases("v", "mv")]
 #[description("Records your vote for map selection")]
+#[allow(unused_must_use)]
 pub(crate) async fn mapvote(
   ctx: &Context,
   msg: &Message,
   mut args: Args,
 ) -> CommandResult {
-  map_vote(ctx, msg, true, args.single::<usize>()? as i32).await?;
+  match args.single::<i32>() {
+    Ok(user_index) => {
+      map_vote(ctx, msg, true, user_index).await;
+    }
+    Err(_) => {
+      let data = ctx.data.read().await;
+      let game = data.get::<GameContainer>().unwrap();
+      match game.phase {
+        Some(Phases::MapSelection) => {
+          msg
+            .channel_id
+            .send_message(&ctx.http, |m| {
+              m.embed(|create_embed| {
+                create_embed.color(super::ERROR_EMBED_COLOR);
+                create_embed.description(String::from(
+              "You must specify a map number with this command. Example: ~mv 1",
+            ));
+                create_embed.title(String::from("ERROR"))
+              })
+            })
+            .await;
+        }
+        _ => {
+          let err = "We're not picking maps right now!";
+          msg
+            .channel_id
+            .send_message(&ctx.http, |m| {
+              m.embed(|create_embed| {
+                create_embed.color(super::ERROR_EMBED_COLOR);
+                create_embed.description(String::from(err));
+                create_embed.title(String::from("ERROR"))
+              })
+            })
+            .await;
+        }
+      }
+    }
+  };
   Ok(())
 }
 
@@ -30,36 +65,36 @@ pub async fn map_vote(
 ) -> Result<(), &'static str> {
   let mut data = ctx.data.write().await;
   let game = data.get_mut::<GameContainer>().unwrap();
-  let embed_color = Colour::from_rgb(255, 0, 0);
-
   if game.phase != Some(Phases::MapSelection) {
     let err = "We're not picking maps right now!";
 
     if send_embed {
-      msg.channel_id.send_message(&ctx.http, |m| {
-        m.embed(|create_embed| {
-          create_embed.color(embed_color);
-          create_embed.description(String::from(err));
-          create_embed.title(String::from("ERROR"))
+      msg
+        .channel_id
+        .send_message(&ctx.http, |m| {
+          m.embed(|create_embed| {
+            create_embed.color(super::ERROR_EMBED_COLOR);
+            create_embed.description(String::from(err));
+            create_embed.title(String::from("ERROR"))
+          })
         })
-      });
+        .await;
     }
 
     return Err(err);
   }
-
   if !game.draft_pool.members.contains(&msg.author) && send_embed {
     match msg.author.direct_message(&ctx.http, |m| m.content(
       "Sorry, but you're not allowed to map vote because you're not registered to play!"
     )).await {
       Ok(_) => {
-        msg.reply(&ctx.http, "You're welcome");
+        msg.reply(&ctx.http, "You're welcome").await;
         Ok(())
       },
       Err(why) => {
         println!("Error sending message: {:?}", why);
         let err = "Had some kind of problem sending you a message.";
-        msg.reply(&ctx.http, err);
+        msg.reply(&ctx.http, err).await;
         Err(err)
       }
     }
@@ -68,32 +103,37 @@ pub async fn map_vote(
       game.map_votes.insert(map_index, vote_count + 1);
       game.register_vote(msg.author.id);
       game.next_phase();
-      let embed_color = Color::from_rgb(164, 255, 241);
       if game.phase == Some(Phases::ResultRecording) && send_embed {
-        msg.channel_id.send_message(&ctx.http, |m| {
-          m.embed(|create_embed| {
-            create_embed.color(embed_color);
-            create_embed.description(format!(
-              "The winning map is {:?}!",
-              game.active_map
-            ));
-            create_embed
-              .title(format!("The winning map is {:?}!", game.active_map))
+        msg
+          .channel_id
+          .send_message(&ctx.http, |m| {
+            m.embed(|create_embed| {
+              create_embed.color(super::SUCCESS_EMBED_COLOR);
+              create_embed.description(format!(
+                "The winning map is {:?}!",
+                game.active_map
+              ));
+              create_embed
+                .title(format!("The winning map is {:?}!", game.active_map))
+            })
           })
-        });
+          .await;
       }
       Ok(())
     } else {
       let err = "Invalid map selection.";
 
       if send_embed {
-        msg.channel_id.send_message(&ctx.http, |m| {
-          m.embed(|create_embed| {
-            create_embed.color(embed_color);
-            create_embed.description(String::from(err));
-            create_embed.title(String::from("ERROR"))
+        msg
+          .channel_id
+          .send_message(&ctx.http, |m| {
+            m.embed(|create_embed| {
+              create_embed.color(super::ERROR_EMBED_COLOR);
+              create_embed.description(String::from(err));
+              create_embed.title(String::from("ERROR"))
+            })
           })
-        });
+          .await;
       }
 
       Err(err)

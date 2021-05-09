@@ -1,6 +1,8 @@
 use serenity::model::channel::Message;
 use serenity::model::user::User;
-use serenity::{framework::standard::macros::command, utils::Colour};
+use serenity::{
+  builder::CreateEmbedAuthor, framework::standard::macros::command,
+};
 
 use crate::traits::has_members::HasMembers;
 use crate::traits::phased::Phased;
@@ -18,7 +20,7 @@ Once enough people to fill out all the teams have added themselves, captains wil
 )]
 #[allow(unused_must_use)]
 pub(crate) async fn add(ctx: &Context, msg: &Message) -> CommandResult {
-  update_members(ctx, msg, true); // XXX: should this be the return value?
+  update_members(ctx, msg, true).await; // XXX: should this be the return value?
   Ok(())
 }
 
@@ -29,6 +31,8 @@ pub async fn update_members(
   send_embed: bool,
 ) -> Vec<User> {
   let mut data = ctx.data.write().await;
+  let author = || msg.author.clone();
+
   if let Some(game) = data.get_mut::<GameContainer>() {
     let embed_descrip: String = game
       .draft_pool
@@ -37,54 +41,68 @@ pub async fn update_members(
       .into_iter()
       .map(|m| m.clone().name)
       .collect();
-    let embed_color = Colour::from_rgb(165, 255, 241);
-    let author = msg.author.clone();
     if game.phase == Some(Phases::PlayerRegistration) {
-      match game.draft_pool.add_member(author) {
+      // TODO: Convert to if-let
+      match game.draft_pool.add_member(author()) {
         Ok(_) => {
           if send_embed {
-            msg.channel_id.send_message(&ctx.http, |m| {
-              m.embed(|e| {
-                e.color(embed_color);
-                e.description(embed_descrip);
-                e.footer(|f| {
-                  f.text(format!(
-                    "{} of {} users in queue",
-                    game.draft_pool.members.len(),
-                    queue_size()
-                  ))
+            msg
+              .channel_id
+              .send_message(&ctx.http, |m| {
+                m.embed(|e| {
+                  let mut cea = CreateEmbedAuthor::default();
+                  cea.name(&author().name);
+                  cea.icon_url(
+                    &author().avatar_url().unwrap_or("No Avatar".to_string()),
+                  );
+                  e.set_author(cea);
+                  e.color(super::SUCCESS_EMBED_COLOR);
+                  e.description(embed_descrip);
+                  e.footer(|f| {
+                    f.text(format!(
+                      "{} of {} users in queue",
+                      game.draft_pool.members.len(),
+                      queue_size()
+                    ))
+                  })
                 })
               })
-            });
+              .await;
           }
         }
         _ => {
           if send_embed {
-            msg.channel_id.send_message(&ctx.http, |m| {
-              m.embed(|e| {
-                e.color(embed_color);
-                e.description(embed_descrip);
-                e.footer(|f| {
-                  f.text(format!("The queue is full! Now picking captains!"))
-                });
-                e.title("Members in queue:".to_string())
+            msg
+              .channel_id
+              .send_message(&ctx.http, |m| {
+                m.embed(|e| {
+                  e.color(super::SUCCESS_EMBED_COLOR);
+                  e.description(embed_descrip);
+                  e.footer(|f| {
+                    f.text(format!("The queue is full! Now picking captains!"))
+                  });
+                  e.title("Members in queue:".to_string())
+                })
               })
-            });
+              .await;
           }
         }
       }
     } else {
       if send_embed {
-        msg.channel_id.send_message(&ctx.http, |m| {
-          m.embed(|e| {
-            e.color(embed_color);
-            e.description(embed_descrip);
-            e.footer(|f| {
-              f.text(format!("The queue is full! Now picking captains!"))
-            });
-            e.title("Members in queue:".to_string())
+        msg
+          .channel_id
+          .send_message(&ctx.http, |m| {
+            m.embed(|e| {
+              e.color(super::SUCCESS_EMBED_COLOR);
+              e.description(embed_descrip);
+              e.footer(|f| {
+                f.text(format!("The queue is full! Now picking captains!"))
+              });
+              e.title("Members in queue:".to_string())
+            })
           })
-        });
+          .await;
       }
     }
     game.next_phase();

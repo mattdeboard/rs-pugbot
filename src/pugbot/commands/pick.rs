@@ -3,10 +3,10 @@ use crate::models::game::Phases;
 
 use crate::traits::has_members::HasMembers;
 use crate::traits::phased::Phased;
+use serenity::framework::standard::macros::command;
 use serenity::framework::standard::{Args, CommandResult};
 use serenity::model::channel::Message;
 use serenity::prelude::Context;
-use serenity::{framework::standard::macros::command, utils::Colour};
 
 // FIXME: look at the `#[allow_roles()]` attr to restrict this to captains.
 #[command]
@@ -33,9 +33,14 @@ pub(crate) async fn pick(
   msg: &Message,
   mut args: Args,
 ) -> CommandResult {
-  let user_index = args.single::<usize>().unwrap();
-
-  draft_player(ctx, msg, true, user_index).await;
+  match args.single::<usize>() {
+    Ok(i) => {
+      draft_player(ctx, msg, true, i).await;
+    }
+    Err(why) => {
+      println!("Error in '~add': {:?}", why);
+    }
+  };
   Ok(())
 }
 
@@ -48,16 +53,18 @@ pub async fn draft_player(
 ) -> Result<(), &'static str> {
   let mut data = ctx.data.write().await;
   let game = data.get_mut::<GameContainer>().unwrap();
-  let embed_color = Colour::from_rgb(165, 255, 241);
   if game.phase != Some(Phases::PlayerDrafting) && send_embed {
     let err = "We're not drafting right now!";
-    msg.channel_id.send_message(&ctx.http, |m| {
-      m.embed(|create_embed| {
-        create_embed.color(embed_color);
-        create_embed.description(String::from(err));
-        create_embed.title(String::from("ERROR"))
+    msg
+      .channel_id
+      .send_message(&ctx.http, |m| {
+        m.embed(|create_embed| {
+          create_embed.color(super::ERROR_EMBED_COLOR);
+          create_embed.description(String::from(err));
+          create_embed.title(String::from("ERROR"))
+        })
       })
-    });
+      .await;
     return Err(err);
   }
 
@@ -68,13 +75,16 @@ pub async fn draft_player(
     let err =
       "The user selected for drafting has been drafted or is otherwise invalid";
     if send_embed {
-      msg.channel_id.send_message(&ctx.http, |m| {
-        m.embed(|create_embed| {
-          create_embed.color(embed_color);
-          create_embed.description(String::from(err));
-          create_embed.title(String::from("ERROR"))
+      msg
+        .channel_id
+        .send_message(&ctx.http, |m| {
+          m.embed(|create_embed| {
+            create_embed.color(super::ERROR_EMBED_COLOR);
+            create_embed.description(String::from(err));
+            create_embed.title(String::from("ERROR"))
+          })
         })
-      });
+        .await;
     }
     return Err(err);
   }
@@ -90,21 +100,26 @@ pub async fn draft_player(
         acc
       },
     );
-    let embed_colour = Colour::from_rgb(165, 255, 241);
-    msg.channel_id.send_message(&ctx.http, |m| {
-      m.embed(|e| {
-        e.color(embed_colour);
-        e.description(game.roster().join("\n--\n"));
-        e.title(String::from("Drafting has been completed!"))
+    msg
+      .channel_id
+      .send_message(&ctx.http, |m| {
+        m.embed(|e| {
+          e.color(super::SUCCESS_EMBED_COLOR);
+          e.description(game.roster().join("\n--\n"));
+          e.title(String::from("Drafting has been completed!"))
+        })
       })
-    });
-    msg.channel_id.send_message(&ctx.http, |m| {
-      m.embed(|e| {
-        e.color(embed_colour);
-        e.description(maps.join("\n"));
-        e.title("Time to pick a map!")
+      .await;
+    msg
+      .channel_id
+      .send_message(&ctx.http, |m| {
+        m.embed(|e| {
+          e.color(super::SUCCESS_EMBED_COLOR);
+          e.description(maps.join("\n"));
+          e.title("Time to pick a map!")
+        })
       })
-    });
+      .await;
   }
   Ok(())
 }

@@ -48,3 +48,6 @@ pub(crate) async fn help_cmd(
   .await;
   Ok(())
 }
+
+pub(crate) const ERROR_EMBED_COLOR: Colour = Colour::from_rgb(255, 0, 0);
+pub(crate) const SUCCESS_EMBED_COLOR: Colour = Colour::from_rgb(0, 255, 0);
