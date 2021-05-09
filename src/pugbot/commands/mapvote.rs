@@ -152,6 +152,10 @@ mod tests {
     let pool = {
       let mut data = context.data.write().await;
       if let Some(game) = data.get_mut::<GameContainer>() {
+        // Now we set up our test conditions:
+        // 1. Advance the game state "phase machine" via `next_phase`
+        // 2. Randomly select two captains from the draft pool via
+        //    `select_captains`.
         game.next_phase();
         game.select_captains();
 
@@ -160,18 +164,6 @@ mod tests {
         None
       }
     };
-
-    // Now we set up our test conditions:
-    // 1. Advance the game state "phase machine" via `next_phase`
-    // 2. Randomly select two captains from the draft pool via
-    //    `select_captains`.
-    {
-      let mut data = context.data.write().await;
-      if let Some(game) = data.get_mut::<GameContainer>() {
-        game.next_phase();
-        game.select_captains();
-      }
-    }
 
     // And now, we populate our teams with the players from the draft
     // pool. Here, `draft_player` requires an exclusive lock on
