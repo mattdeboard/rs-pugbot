@@ -148,7 +148,6 @@ impl Phased for Game {
         // If the draft pool is NOT full, do not advance to the next phase. "Not
         // advancing to the next phase" is equivalent to returning
         // `Phases::PlayerRegistration` as the phase.
-        println!("Draft Pool size: {}", self.draft_pool.members().len());
         if self.draft_pool.members().len() as u32
           == self.team_count * self.team_size
         {

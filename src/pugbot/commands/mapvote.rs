@@ -124,10 +124,9 @@ mod tests {
     {
       let game = Game::new(
         vec![],
-        DraftPool::new(authors, 12),
+        DraftPool::new(authors, 2 * user_count / 2),
         1,
         maps,
-        // Draft pool max size: 12 (2 * 6)
         2,
         user_count / 2,
       );
@@ -145,31 +144,67 @@ mod tests {
     let message = struct_from_json!(Message, "message");
     let candidate_map_idx = 1;
 
-    {
+    // First, we retrieve the pool of available players. We need the
+    // write lock on `context.data` so this has to happen inside a
+    // block. This is because the commands also need the exclusive lock
+    // on `context.data`. So those two have to be isolated from each
+    // other.
+    let pool = {
       let mut data = context.data.write().await;
       if let Some(game) = data.get_mut::<GameContainer>() {
         game.next_phase();
         game.select_captains();
 
-        let player_pool = game.draft_pool.available_players.clone();
+        Some(game.draft_pool.available_players.clone())
+      } else {
+        None
+      }
+    };
 
-        // Populate the draft pool.
+    // Now we set up our test conditions:
+    // 1. Advance the game state "phase machine" via `next_phase`
+    // 2. Randomly select two captains from the draft pool via
+    //    `select_captains`.
+    {
+      let mut data = context.data.write().await;
+      if let Some(game) = data.get_mut::<GameContainer>() {
+        game.next_phase();
+        game.select_captains();
+      }
+    }
+
+    // And now, we populate our teams with the players from the draft
+    // pool. Here, `draft_player` requires an exclusive lock on
+    // `context.data` so it's inside a block.
+    {
+      if let Some(player_pool) = pool {
         for (key, _) in player_pool.iter() {
           commands::pick::draft_player(&context, &message, false, *key).await;
         }
       }
     }
+
+    // Confirm we're on the phase we ought to be: `MapSelection`
     {
       let mut data = context.data.write().await;
       if let Some(game) = data.get_mut::<GameContainer>() {
         assert_eq!(game.phase, Some(Phases::MapSelection));
-        let mut counter = 0;
+      }
+    }
 
-        // We register a map vote for each player here.
-        for _ in 0..(game.team_count * game.team_size) {
-          // Precondition. We should be in the right phase every time.
-          // Precondition. The count of votes should be what we expect.
-          assert_eq!(game.map_votes.get(&candidate_map_idx), Some(&counter));
+    let team_metadata = {
+      let mut data = context.data.write().await;
+      if let Some(game) = data.get_mut::<GameContainer>() {
+        Some((game.team_size, game.team_count))
+      } else {
+        None
+      }
+    };
+
+    // Register a map vote for every drafted player
+    {
+      if let Some((team_size, team_count)) = team_metadata {
+        for _ in 0..(team_count * team_size) {
           commands::mapvote::map_vote(
             &context,
             &message,
@@ -177,34 +212,27 @@ mod tests {
             candidate_map_idx,
           )
           .await;
-          assert_eq!(
-            game.map_votes.get(&candidate_map_idx),
-            Some(&(counter + 1))
-          );
-          counter += 1;
         }
       }
     }
-    let mut data = context.data.write().await;
-    if let Some(game) = data.get_mut::<GameContainer>() {
-      // This is the key of the game map we're voting for in this test.
 
-      // Postcondition. The count of votes for this particular map should be one
-      // higher now.
-
-      let vote_counts: i32 = game
-        .map_votes
-        .values()
-        .clone()
-        .fold(0, |acc, val| acc + *val);
-      // The total number of votes should now equal the total number of players.
-      assert_eq!(vote_counts as u32, game.team_count * game.team_size);
-      // The number of votes for our candidate should be all the votes. (No other
-      // maps should have votes)
-      assert_eq!(game.map_votes.get(&candidate_map_idx), Some(&vote_counts));
-      // The game should advance to the next phase since all the votes have been
-      // tallied.
-      assert_eq!(game.phase, Some(Phases::ResultRecording));
-    };
+    {
+      let mut data = context.data.write().await;
+      if let Some(game) = data.get_mut::<GameContainer>() {
+        let vote_counts: i32 = game
+          .map_votes
+          .values()
+          .clone()
+          .fold(0, |acc, val| acc + *val);
+        // The total number of votes should now equal the total number of players.
+        assert_eq!(vote_counts as u32, game.team_count * game.team_size);
+        // The number of votes for our candidate should be all the votes. (No other
+        // maps should have votes)
+        assert_eq!(game.map_votes.get(&candidate_map_idx), Some(&vote_counts));
+        // The game should advance to the next phase since all the votes have been
+        // tallied.
+        assert_eq!(game.phase, Some(Phases::ResultRecording));
+      }
+    }
   }
 }
