@@ -117,7 +117,6 @@ mod tests {
   use crate::models::{draft_pool::DraftPool, game::GameContainer};
   use crate::{commands, struct_from_json};
   use serenity::model::channel::Message;
-  use std::env;
   use std::fs::File;
 
   async fn test_context() -> Context {
@@ -142,10 +141,6 @@ mod tests {
   #[tokio::test]
   async fn test_update_members() {
     let message = struct_from_json!(Message, "message");
-    kankyo::load().expect("Failed to load .env file");
-    let key = "TEAM_SIZE";
-    let original_team_size = kankyo::key(key).expect("No TEAM_SIZE in .env");
-    env::set_var(key, "1");
     let context = test_context().await;
     {
       let data = context.data.read().await;
@@ -168,6 +163,5 @@ mod tests {
     if let Some(game) = data.get::<GameContainer>() {
       assert_eq!(game.phase, Some(Phases::PlayerRegistration));
     }
-    env::set_var(key, original_team_size);
   }
 }
