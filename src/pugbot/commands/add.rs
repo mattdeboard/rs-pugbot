@@ -35,7 +35,7 @@ pub async fn update_members(
 
   if let Some(game) = data.get_mut::<GameContainer>() {
     let draft_pool = &mut game.draft_pool;
-    let embed_descrip: String = draft_pool
+    let embed_descrip: Vec<String> = draft_pool
       .members
       .clone()
       .into_iter()
@@ -56,12 +56,14 @@ pub async fn update_members(
                   m.embed(|e| {
                     let mut cea = CreateEmbedAuthor::default();
                     cea.name(&author().name);
-                    cea.icon_url(
-                      &author().avatar_url().unwrap_or("No Avatar".to_string()),
-                    );
+
+                    if let Some(url) = &author().avatar_url() {
+                      cea.icon_url(url);
+                    }
+
                     e.set_author(cea);
                     e.color(super::SUCCESS_EMBED_COLOR);
-                    e.description(embed_descrip);
+                    e.description(embed_descrip.join("\n"));
                     e.footer(|f| {
                       f.text(format!(
                         "{} of {} users in queue",
@@ -88,7 +90,7 @@ pub async fn update_members(
               .send_message(&ctx.http, |m| {
                 m.embed(|e| {
                   e.color(super::SUCCESS_EMBED_COLOR);
-                  e.description(embed_descrip);
+                  e.description(embed_descrip.join("\n"));
                   e.footer(|f| {
                     f.text(format!("The queue is full! Now picking captains!"))
                   });

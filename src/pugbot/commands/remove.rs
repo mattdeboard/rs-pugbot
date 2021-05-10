@@ -35,7 +35,7 @@ pub async fn remove_member(
     }
 
     if send_embed {
-      let embed_descrip: String = game
+      let embed_descrip: Vec<String> = game
         .draft_pool
         .members
         .clone()
@@ -48,12 +48,14 @@ pub async fn remove_member(
           m.embed(|e| {
             let mut cea = CreateEmbedAuthor::default();
             cea.name(&author.name);
-            cea.icon_url(
-              &author.avatar_url().unwrap_or("No Avatar".to_string()),
-            );
+
+            if let Some(url) = &author.avatar_url() {
+              cea.icon_url(url);
+            }
+
             e.set_author(cea);
             e.color(super::SUCCESS_EMBED_COLOR);
-            e.description(embed_descrip);
+            e.description(embed_descrip.join("\n"));
             e.footer(|f| {
               f.text(format!(
                 "{} of {} users in queue",
