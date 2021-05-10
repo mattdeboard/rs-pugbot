@@ -21,7 +21,7 @@ impl HasMembers for Team {
     self.members.clone()
   }
 
-  fn add_member(&mut self, user: User) -> Result<usize, &str> {
+  fn add_member(&mut self, user: User) -> Result<usize, String> {
     self.members.push(user);
     self.members.dedup();
     Ok(self.members.len())

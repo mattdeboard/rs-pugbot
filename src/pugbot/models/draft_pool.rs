@@ -50,15 +50,15 @@ impl HasMembers for DraftPool {
     self.members.clone()
   }
 
-  fn add_member(&mut self, user: User) -> Result<usize, &str> {
+  fn add_member(&mut self, user: User) -> Result<usize, String> {
     self.members.push(user);
     self.members.dedup();
 
     if (self.members.len() as u32) == queue_size() {
-      return Err("Draft pool is full!");
+      return Err("Draft pool is full!".to_string());
     }
 
-    Ok(self.members.len())
+    return Ok(self.members.len());
   }
 
   fn remove_member(&mut self, user: &User) -> Result<usize, &str> {

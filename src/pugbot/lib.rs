@@ -57,14 +57,11 @@ impl EventHandler for Handler {
 fn team_size() -> u32 {
   kankyo::load().expect("Failed to load .env file");
 
-  match std::env::var("TEAM_SIZE") {
-    Ok(size) => {
-      if let Ok(s) = size.parse::<u32>() {
-        s
-      } else {
-        panic!("Invalid value for `TEAM_COUNT`")
-      }
-    }
+  match kankyo::key("TEAM_SIZE")
+    .expect("Invalid value for 'TEAM_SIZE'")
+    .parse::<u32>()
+  {
+    Ok(size) => size,
     Err(_) => panic!("No 'TEAM_SIZE' env var found"),
   }
 }

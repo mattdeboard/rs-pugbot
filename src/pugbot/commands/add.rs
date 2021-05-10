@@ -34,8 +34,8 @@ pub async fn update_members(
   let author = || msg.author.clone();
 
   if let Some(game) = data.get_mut::<GameContainer>() {
-    let embed_descrip: String = game
-      .draft_pool
+    let draft_pool = &mut game.draft_pool;
+    let embed_descrip: String = draft_pool
       .members
       .clone()
       .into_iter()
@@ -43,34 +43,45 @@ pub async fn update_members(
       .collect();
     if game.phase == Some(Phases::PlayerRegistration) {
       // TODO: Convert to if-let
-      match game.draft_pool.add_member(author()) {
-        Ok(_) => {
-          if send_embed {
-            msg
-              .channel_id
-              .send_message(&ctx.http, |m| {
-                m.embed(|e| {
-                  let mut cea = CreateEmbedAuthor::default();
-                  cea.name(&author().name);
-                  cea.icon_url(
-                    &author().avatar_url().unwrap_or("No Avatar".to_string()),
-                  );
-                  e.set_author(cea);
-                  e.color(super::SUCCESS_EMBED_COLOR);
-                  e.description(embed_descrip);
-                  e.footer(|f| {
-                    f.text(format!(
-                      "{} of {} users in queue",
-                      game.draft_pool.members.len(),
-                      queue_size()
-                    ))
+      match draft_pool.add_member(author()) {
+        Ok(member_count) => {
+          drop(data);
+          let mut data = ctx.data.write().await;
+
+          if let Some(game) = data.get_mut::<GameContainer>() {
+            if send_embed {
+              msg
+                .channel_id
+                .send_message(&ctx.http, |m| {
+                  m.embed(|e| {
+                    let mut cea = CreateEmbedAuthor::default();
+                    cea.name(&author().name);
+                    cea.icon_url(
+                      &author().avatar_url().unwrap_or("No Avatar".to_string()),
+                    );
+                    e.set_author(cea);
+                    e.color(super::SUCCESS_EMBED_COLOR);
+                    e.description(embed_descrip);
+                    e.footer(|f| {
+                      f.text(format!(
+                        "{} of {} users in queue",
+                        game.draft_pool.members.len(),
+                        queue_size()
+                      ))
+                    })
                   })
                 })
-              })
-              .await;
+                .await;
+            }
+            if member_count as u32 == queue_size() {
+              game.next_phase();
+            }
+            return game.draft_pool.members();
           }
+          return vec![];
         }
         _ => {
+          game.next_phase();
           if send_embed {
             msg
               .channel_id
@@ -86,27 +97,10 @@ pub async fn update_members(
               })
               .await;
           }
+          return game.draft_pool.members();
         }
       }
-    } else {
-      if send_embed {
-        msg
-          .channel_id
-          .send_message(&ctx.http, |m| {
-            m.embed(|e| {
-              e.color(super::SUCCESS_EMBED_COLOR);
-              e.description(embed_descrip);
-              e.footer(|f| {
-                f.text(format!("The queue is full! Now picking captains!"))
-              });
-              e.title("Members in queue:".to_string())
-            })
-          })
-          .await;
-      }
     }
-    game.next_phase();
-    return game.draft_pool.members();
   };
   return vec![];
 }
@@ -148,7 +142,9 @@ mod tests {
   #[tokio::test]
   async fn test_update_members() {
     let message = struct_from_json!(Message, "message");
+    kankyo::load().expect("Failed to load .env file");
     let key = "TEAM_SIZE";
+    let original_team_size = kankyo::key(key).expect("No TEAM_SIZE in .env");
     env::set_var(key, "1");
     let context = test_context().await;
     {
@@ -172,5 +168,6 @@ mod tests {
     if let Some(game) = data.get::<GameContainer>() {
       assert_eq!(game.phase, Some(Phases::PlayerRegistration));
     }
+    env::set_var(key, original_team_size);
   }
 }
