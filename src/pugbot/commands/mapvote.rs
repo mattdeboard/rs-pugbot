@@ -91,8 +91,7 @@ pub async fn map_vote(
         msg.reply(&ctx.http, "You're welcome").await;
         Ok(())
       },
-      Err(why) => {
-        println!("Error sending message: {:?}", why);
+      Err(_) => {
         let err = "Had some kind of problem sending you a message.";
         msg.reply(&ctx.http, err).await;
         Err(err)

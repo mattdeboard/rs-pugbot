@@ -33,14 +33,9 @@ pub(crate) async fn pick(
   msg: &Message,
   mut args: Args,
 ) -> CommandResult {
-  match args.single::<usize>() {
-    Ok(i) => {
-      draft_player(ctx, msg, true, i).await;
-    }
-    Err(why) => {
-      println!("Error in '~add': {:?}", why);
-    }
-  };
+  if let Ok(user_index) = args.single::<usize>() {
+    draft_player(ctx, msg, true, user_index).await;
+  }
   Ok(())
 }
 
