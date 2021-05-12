@@ -1,0 +1,7 @@
+jobs:
+  build:
+    docker:
+      - image: cimg/rust:1.52.1
+    steps:
+      - checkout
+      - run: cargo --version
