@@ -5,4 +5,5 @@ jobs:
     steps:
       - checkout
       - run: cargo --version
-      - run: cargo test
+      - run: cp rename-this-to-.env .env
+      - run: cargo test --lib
