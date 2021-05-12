@@ -4,9 +4,9 @@ use diesel::pg::Pg;
 use diesel::prelude::{Insertable, Queryable};
 use diesel::ExpressionMethods;
 
+#[derive(Debug, Associations, Identifiable)]
 #[primary_key(game_title_id)]
 #[table_name = "game_titles"]
-#[derive(Debug, Associations, Identifiable)]
 pub struct GameTitle {
   pub game_title_id: i32,
   pub game_name: String,

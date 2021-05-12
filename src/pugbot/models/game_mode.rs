@@ -5,10 +5,10 @@ use diesel::pg::Pg;
 use diesel::prelude::{Insertable, Queryable};
 use diesel::ExpressionMethods;
 
+#[derive(Debug, Associations, Identifiable)]
 #[primary_key(game_mode_id)]
 #[table_name = "game_modes"]
 #[belongs_to(GameTitle, foreign_key = "game_title_id")]
-#[derive(Debug, Associations, Identifiable)]
 pub struct GameMode {
   pub game_mode_id: i32,
   pub game_title_id: i32,
