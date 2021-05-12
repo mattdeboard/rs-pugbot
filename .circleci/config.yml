@@ -5,4 +5,4 @@ jobs:
     steps:
       - checkout
       - run: cargo --version
-      - run: cargo checkout
+      - run: cargo check
