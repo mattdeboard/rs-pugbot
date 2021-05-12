@@ -1,6 +1,4 @@
-[![mattdeboard](https://circleci.com/gh/mattdeboard/rs-pugbot.svg?style=svg)](https://app.circleci.com/pipelines/github/mattdeboard/rs-pugbot)
-
-# 🦀 PugBot 🦀
+# 🦀 PugBot 🦀 [![mattdeboard](https://circleci.com/gh/mattdeboard/rs-pugbot.svg?style=svg)](https://app.circleci.com/pipelines/github/mattdeboard/rs-pugbot)
 
 ## Overview
 
