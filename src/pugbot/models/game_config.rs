@@ -10,6 +10,6 @@ use crate::schema::*;
 pub struct GameConfig {
   game_config_id: i32,
   game_title_id: i32,
-  team_count: u32,
-  team_size: u32,
+  team_count: i32,
+  team_size: i32,
 }
