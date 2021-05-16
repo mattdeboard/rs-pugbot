@@ -12,7 +12,6 @@ table! {
         game_mode_id -> Int4,
         game_title_id -> Int4,
         mode_name -> Varchar,
-        team_size -> Int4,
     }
 }
 

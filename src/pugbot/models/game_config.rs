@@ -63,7 +63,7 @@ pub mod tests {
 
   static DB_URL: &'static str =
     "postgres://pugbot:password@localhost/pugbot_test";
-
+  static TEAM_SIZE: i32 = 5;
   fn game_mode_id_generator() -> std::iter::Cycle<std::ops::Range<i32>> {
     (1..std::i32::MAX).cycle()
   }
@@ -127,7 +127,6 @@ pub mod tests {
       game_mode_id: game_mode_pk.next().unwrap_or(1),
       game_title_id,
       mode_name: "Test Mode A".to_string(),
-      team_size: 5,
     };
 
     let game_mode_id = insert_into(game_modes::table)
@@ -144,7 +143,7 @@ pub mod tests {
       game_config_id: 1,
       game_mode_id,
       team_count: 2,
-      team_size: game_mode.team_size,
+      team_size: TEAM_SIZE,
     };
 
     insert_into(game_configs::table)
