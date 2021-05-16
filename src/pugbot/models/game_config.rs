@@ -68,6 +68,9 @@ pub mod tests {
     (1..std::i32::MAX).cycle()
   }
 
+  // We're using setup & teardown here so we can target a test DB, run
+  // migrations, and clear "starter" data the migrations insert. We want
+  // a clean slate every time.
   fn setup() -> Result<(), &'static str> {
     if let Ok(conn) = PgConnection::establish(DB_URL) {
       embed_migrations!();
