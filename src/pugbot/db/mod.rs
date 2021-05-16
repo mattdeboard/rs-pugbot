@@ -1,6 +1,3 @@
-#[cfg(test)]
-pub mod test_utils;
-
 use diesel::insert_into;
 use diesel::result::Error;
 use diesel::{
