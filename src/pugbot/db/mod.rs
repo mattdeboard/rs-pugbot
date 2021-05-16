@@ -1,3 +1,6 @@
+#[cfg(test)]
+pub mod test_utils;
+
 use diesel::insert_into;
 use diesel::result::Error;
 use diesel::{
@@ -6,15 +9,12 @@ use diesel::{
 use r2d2;
 use r2d2_diesel::ConnectionManager;
 use serenity::{model::user::User, prelude::TypeMapKey};
-use std::env;
-use std::ops::Deref;
+use std::{env, ops::Deref};
 
-use crate::models::map::Map as GameMap;
-use crate::models::user::DiscordUser;
-use crate::models::user_rating::UserRating;
-use crate::schema::user_ratings;
-use crate::schema::users::dsl::*;
-use crate::schema::*;
+use crate::models::{
+  map::Map as GameMap, user::DiscordUser, user_rating::UserRating,
+};
+use crate::schema::{users::dsl::*, *};
 
 // Connection request guard type: a wrapper around an r2d2 pooled connection.
 pub struct DbConn(pub r2d2::PooledConnection<ConnectionManager<PgConnection>>);

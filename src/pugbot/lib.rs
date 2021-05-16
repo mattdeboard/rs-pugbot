@@ -5,6 +5,8 @@ extern crate log;
 extern crate diesel;
 #[macro_use]
 extern crate serde_derive;
+#[macro_use]
+extern crate diesel_migrations;
 
 use env_logger;
 use kankyo;

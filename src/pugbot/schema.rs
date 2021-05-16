@@ -1,9 +1,9 @@
 table! {
     game_configs (game_config_id) {
         game_config_id -> Int4,
-        game_title_id -> Int4,
         team_count -> Int4,
         team_size -> Int4,
+        game_mode_id -> Int4,
     }
 }
 
@@ -51,17 +51,17 @@ table! {
     }
 }
 
-joinable!(game_configs -> game_titles (game_title_id));
+joinable!(game_configs -> game_modes (game_mode_id));
 joinable!(game_modes -> game_titles (game_title_id));
 joinable!(maps -> game_titles (game_title_id));
 joinable!(user_ratings -> game_modes (game_mode_id));
 joinable!(user_ratings -> users (user_id));
 
 allow_tables_to_appear_in_same_query!(
-  game_configs,
-  game_modes,
-  game_titles,
-  maps,
-  user_ratings,
-  users,
+    game_configs,
+    game_modes,
+    game_titles,
+    maps,
+    user_ratings,
+    users,
 );
