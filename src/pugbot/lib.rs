@@ -1,10 +1,12 @@
-#![allow(unused_attributes)]
 #[macro_use]
 extern crate log;
 #[macro_use]
 extern crate diesel;
 #[macro_use]
 extern crate serde_derive;
+#[allow(unused_imports)]
+#[macro_use]
+extern crate diesel_migrations;
 
 use env_logger;
 use kankyo;
@@ -112,7 +114,7 @@ pub async fn client_setup() {
   {
     let mut data = client.data.write().await;
     let draft_pool = DraftPool::new(Vec::new(), team_count() * team_size());
-    let db_pool = db::init_pool(None);
+    let db_pool = db::init_pool(None, None);
     let conn = db_pool.get().unwrap();
     let map_choices = db::select_maps_for_mode_id(conn, 1);
     let game = Game::new(

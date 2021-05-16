@@ -6,15 +6,12 @@ use diesel::{
 use r2d2;
 use r2d2_diesel::ConnectionManager;
 use serenity::{model::user::User, prelude::TypeMapKey};
-use std::env;
-use std::ops::Deref;
+use std::{env, ops::Deref, time::Duration};
 
-use crate::models::map::Map as GameMap;
-use crate::models::user::DiscordUser;
-use crate::models::user_rating::UserRating;
-use crate::schema::user_ratings;
-use crate::schema::users::dsl::*;
-use crate::schema::*;
+use crate::models::{
+  map::Map as GameMap, user::DiscordUser, user_rating::UserRating,
+};
+use crate::schema::{users::dsl::*, *};
 
 // Connection request guard type: a wrapper around an r2d2 pooled connection.
 pub struct DbConn(pub r2d2::PooledConnection<ConnectionManager<PgConnection>>);
@@ -37,6 +34,7 @@ impl TypeMapKey for Pool {
 /// Initializes a database pool.
 pub fn init_pool(
   db_url: Option<String>,
+  connection_timeout: Option<u64>,
 ) -> r2d2::Pool<ConnectionManager<PgConnection>> {
   let database_url = match db_url {
     Some(url) => url,
@@ -44,8 +42,9 @@ pub fn init_pool(
   };
   let manager = ConnectionManager::<PgConnection>::new(database_url);
   r2d2::Pool::builder()
+    .connection_timeout(Duration::from_secs(connection_timeout.unwrap_or(5)))
     .build(manager)
-    .expect("Failed to create pool.")
+    .expect("Failed to create pool; Make sure the database exists!")
 }
 
 pub fn create_user_and_ratings(

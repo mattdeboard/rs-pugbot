@@ -1,3 +1,8 @@
+use_field_init_shorthand = true
 tab_spaces = 2
 max_width = 80
+
+## Nightly options:
+# imports_granularity = "Crate"
 # wrap_comments = true
+##
