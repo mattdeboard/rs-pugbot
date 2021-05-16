@@ -21,14 +21,13 @@ pub struct GameConfig {
 }
 
 pub fn select_config_for_mode(
-  conn: r2d2::PooledConnection<ConnectionManager<PgConnection>>,
+  conn: &r2d2::PooledConnection<ConnectionManager<PgConnection>>,
   mode_id: i32,
-) -> GameConfig {
+) -> Result<GameConfig, Error> {
   game_configs::table
     .inner_join(game_modes::table.on(game_modes::game_mode_id.eq(mode_id)))
     .select(game_configs::all_columns)
-    .get_result::<GameConfig>(&*conn)
-    .expect("Unable to find config for this mode.")
+    .get_result::<GameConfig>(&**conn)
 }
 
 pub fn select_configs_for_game_title(
@@ -48,14 +47,16 @@ pub fn select_configs_for_game_title(
 pub mod tests {
 
   use diesel::{
-    delete, insert_into, Connection, ExpressionMethods, PgConnection, QueryDsl,
-    RunQueryDsl,
+    delete, insert_into, result::Error, Connection, ExpressionMethods,
+    PgConnection, QueryDsl, RunQueryDsl,
   };
   use diesel_migrations::embed_migrations;
 
   use crate::db::init_pool;
   use crate::models::{
-    game_config::{select_configs_for_game_title, GameConfig},
+    game_config::{
+      select_config_for_mode, select_configs_for_game_title, GameConfig,
+    },
     game_mode::GameMode,
     game_title::GameTitle,
   };
@@ -84,8 +85,6 @@ pub mod tests {
       delete(game_modes::table)
         .execute(&conn)
         .expect("Could not clear game_modes");
-
-      return Ok(());
     }
     Err("Migrations could not be run")
   }
@@ -105,11 +104,10 @@ pub mod tests {
   }
 
   #[test]
-  fn test_select_configs_for_game_title() {
+  fn test_select_config_for_mode() {
     setup();
-    // Shorter db connection timeout in test
     let pool = init_pool(Some(DB_URL.to_string()), Some(1));
-    let first_conn = pool.get().expect("Unable to get connection to DB");
+    let conn = pool.get().expect("Unable to get connection to DB");
     let mut game_mode_pk = game_mode_id_generator();
 
     let game_title = GameTitle {
@@ -118,12 +116,12 @@ pub mod tests {
     };
     insert_into(game_titles::table)
       .values(&game_title)
-      .execute(&*first_conn);
+      .execute(&*conn);
 
     let game_title_id: i32 = game_titles::table
       .filter(game_titles::game_name.eq(&game_title.game_name))
       .select(game_titles::game_title_id)
-      .get_result(&*first_conn)
+      .get_result(&*conn)
       .expect("Oops");
 
     let game_mode = GameMode {
@@ -135,12 +133,12 @@ pub mod tests {
     let game_mode_id = insert_into(game_modes::table)
       .values(&game_mode)
       .returning(game_modes::game_mode_id)
-      .get_result::<i32>(&*first_conn)
+      .get_result::<i32>(&*conn)
       .expect("Error inserting GameMode");
 
     insert_into(game_modes::table)
       .values(&game_mode)
-      .execute(&*first_conn);
+      .execute(&*conn);
 
     let game_config = GameConfig {
       game_config_id: 1,
@@ -151,11 +149,67 @@ pub mod tests {
 
     insert_into(game_configs::table)
       .values(&game_config)
-      .get_results::<GameConfig>(&*first_conn);
+      .get_results::<GameConfig>(&*conn);
 
-    if let Ok(configs) =
-      select_configs_for_game_title(&first_conn, game_title_id)
-    {
+    if let Ok(result) = select_config_for_mode(&conn, game_title_id) {
+      assert_eq!(result.game_mode_id, game_mode_id);
+    }
+    teardown();
+  }
+
+  #[test]
+  fn test_select_configs_for_game_title() {
+    setup();
+    // Shorter db connection timeout in test
+    let pool = init_pool(Some(DB_URL.to_string()), Some(1));
+    let conn = pool.get().expect("Unable to get connection to DB");
+    let mut game_mode_pk = game_mode_id_generator();
+
+    let game_title = GameTitle {
+      game_title_id: 1,
+      game_name: "TestGame".to_string(),
+    };
+    conn.transaction::<_, Error, _>(|| {
+      insert_into(game_titles::table)
+        .values(&game_title)
+        .execute(&*conn);
+      Ok(())
+    });
+
+    let game_title_id: i32 = game_titles::table
+      .filter(game_titles::game_name.eq(&game_title.game_name))
+      .select(game_titles::game_title_id)
+      .get_result(&*conn)
+      .expect("Oops");
+
+    let game_mode = GameMode {
+      game_mode_id: game_mode_pk.next().unwrap_or(1),
+      game_title_id,
+      mode_name: "Test Mode A".to_string(),
+    };
+
+    let game_mode_id = insert_into(game_modes::table)
+      .values(&game_mode)
+      .returning(game_modes::game_mode_id)
+      .get_result::<i32>(&*conn)
+      .expect("Error inserting GameMode");
+
+    insert_into(game_modes::table)
+      .values(&game_mode)
+      .execute(&*conn);
+
+    let game_config = GameConfig {
+      game_config_id: 1,
+      game_mode_id,
+      team_count: 2,
+      team_size: TEAM_SIZE,
+    };
+
+    insert_into(game_configs::table)
+      .values(&game_config)
+      .get_results::<GameConfig>(&*conn);
+
+    if let Ok(configs) = select_configs_for_game_title(&conn, game_title_id) {
       assert_eq!(configs.len(), 1);
     }
     teardown();
