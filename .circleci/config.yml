@@ -6,4 +6,5 @@ jobs:
       - checkout
       - run: cargo --version
       - run: cp rename-this-to-.env .env
-      - run: cargo test --lib -- --test-threads=1
+      - run: cargo test --lib
+      - run: cargo test --lib -- --test-threads=1 --ignored models::game_config

@@ -104,114 +104,122 @@ pub mod tests {
   }
 
   #[test]
+  #[ignore]
   fn test_select_config_for_mode() {
     setup();
     let pool = init_pool(Some(DB_URL.to_string()), Some(1));
     let conn = pool.get().expect("Unable to get connection to DB");
     let mut game_mode_pk = game_mode_id_generator();
 
-    let game_title = GameTitle {
-      game_title_id: 1,
-      game_name: "TestGame".to_string(),
-    };
-    insert_into(game_titles::table)
-      .values(&game_title)
-      .execute(&*conn);
+    conn.transaction::<_, Error, _>(|| {
+      let game_title = GameTitle {
+        game_title_id: 1,
+        game_name: "TestGame".to_string(),
+      };
+      insert_into(game_titles::table)
+        .values(&game_title)
+        .execute(&*conn);
 
-    let game_title_id: i32 = game_titles::table
-      .filter(game_titles::game_name.eq(&game_title.game_name))
-      .select(game_titles::game_title_id)
-      .get_result(&*conn)
-      .expect("Oops");
+      let game_title_id: i32 = game_titles::table
+        .filter(game_titles::game_name.eq(&game_title.game_name))
+        .select(game_titles::game_title_id)
+        .get_result(&*conn)
+        .expect("Oops");
 
-    let game_mode = GameMode {
-      game_mode_id: game_mode_pk.next().unwrap_or(1),
-      game_title_id,
-      mode_name: "Test Mode A".to_string(),
-    };
+      let game_mode = GameMode {
+        game_mode_id: game_mode_pk.next().unwrap_or(1),
+        game_title_id,
+        mode_name: "Test Mode A".to_string(),
+      };
 
-    let game_mode_id = insert_into(game_modes::table)
-      .values(&game_mode)
-      .returning(game_modes::game_mode_id)
-      .get_result::<i32>(&*conn)
-      .expect("Error inserting GameMode");
+      let game_mode_id = insert_into(game_modes::table)
+        .values(&game_mode)
+        .returning(game_modes::game_mode_id)
+        .get_result::<i32>(&*conn)
+        .expect("Error inserting GameMode");
 
-    insert_into(game_modes::table)
-      .values(&game_mode)
-      .execute(&*conn);
+      insert_into(game_modes::table)
+        .values(&game_mode)
+        .execute(&*conn);
 
-    let game_config = GameConfig {
-      game_config_id: 1,
-      game_mode_id,
-      team_count: 2,
-      team_size: TEAM_SIZE,
-    };
+      let game_config = GameConfig {
+        game_config_id: 1,
+        game_mode_id,
+        team_count: 2,
+        team_size: TEAM_SIZE,
+      };
 
-    insert_into(game_configs::table)
-      .values(&game_config)
-      .get_results::<GameConfig>(&*conn);
+      insert_into(game_configs::table)
+        .values(&game_config)
+        .get_results::<GameConfig>(&*conn);
 
-    if let Ok(result) = select_config_for_mode(&conn, game_title_id) {
-      assert_eq!(result.game_mode_id, game_mode_id);
-    }
+      if let Ok(result) = select_config_for_mode(&conn, game_title_id) {
+        assert_eq!(result.game_mode_id, game_mode_id);
+      }
+      Ok(())
+    });
     teardown();
   }
 
   #[test]
+  #[ignore]
   fn test_select_configs_for_game_title() {
-    setup();
     // Shorter db connection timeout in test
     let pool = init_pool(Some(DB_URL.to_string()), Some(1));
     let conn = pool.get().expect("Unable to get connection to DB");
     let mut game_mode_pk = game_mode_id_generator();
 
-    let game_title = GameTitle {
-      game_title_id: 1,
-      game_name: "TestGame".to_string(),
-    };
     conn.transaction::<_, Error, _>(|| {
-      insert_into(game_titles::table)
-        .values(&game_title)
+      setup();
+      let game_title = GameTitle {
+        game_title_id: 1,
+        game_name: "TestGame".to_string(),
+      };
+      conn.transaction::<_, Error, _>(|| {
+        insert_into(game_titles::table)
+          .values(&game_title)
+          .execute(&*conn);
+        Ok(())
+      });
+
+      let game_title_id: i32 = game_titles::table
+        .filter(game_titles::game_name.eq(&game_title.game_name))
+        .select(game_titles::game_title_id)
+        .get_result(&*conn)
+        .expect("Oops");
+
+      let game_mode = GameMode {
+        game_mode_id: game_mode_pk.next().unwrap_or(1),
+        game_title_id,
+        mode_name: "Test Mode A".to_string(),
+      };
+
+      let game_mode_id = insert_into(game_modes::table)
+        .values(&game_mode)
+        .returning(game_modes::game_mode_id)
+        .get_result::<i32>(&*conn)
+        .expect("Error inserting GameMode");
+
+      insert_into(game_modes::table)
+        .values(&game_mode)
         .execute(&*conn);
+
+      let game_config = GameConfig {
+        game_config_id: 1,
+        game_mode_id,
+        team_count: 2,
+        team_size: TEAM_SIZE,
+      };
+
+      insert_into(game_configs::table)
+        .values(&game_config)
+        .get_results::<GameConfig>(&*conn);
+
+      if let Ok(configs) = select_configs_for_game_title(&conn, game_title_id) {
+        assert_eq!(configs.len(), 1);
+      }
       Ok(())
     });
-
-    let game_title_id: i32 = game_titles::table
-      .filter(game_titles::game_name.eq(&game_title.game_name))
-      .select(game_titles::game_title_id)
-      .get_result(&*conn)
-      .expect("Oops");
-
-    let game_mode = GameMode {
-      game_mode_id: game_mode_pk.next().unwrap_or(1),
-      game_title_id,
-      mode_name: "Test Mode A".to_string(),
-    };
-
-    let game_mode_id = insert_into(game_modes::table)
-      .values(&game_mode)
-      .returning(game_modes::game_mode_id)
-      .get_result::<i32>(&*conn)
-      .expect("Error inserting GameMode");
-
-    insert_into(game_modes::table)
-      .values(&game_mode)
-      .execute(&*conn);
-
-    let game_config = GameConfig {
-      game_config_id: 1,
-      game_mode_id,
-      team_count: 2,
-      team_size: TEAM_SIZE,
-    };
-
-    insert_into(game_configs::table)
-      .values(&game_config)
-      .get_results::<GameConfig>(&*conn);
-
-    if let Ok(configs) = select_configs_for_game_title(&conn, game_title_id) {
-      assert_eq!(configs.len(), 1);
-    }
     teardown();
   }
 }
