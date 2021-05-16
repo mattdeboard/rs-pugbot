@@ -36,9 +36,9 @@ pub fn select_configs_for_game_title(
   game_title_id: i32,
 ) -> Result<Vec<GameConfig>, Error> {
   game_configs::table
-    // .inner_join(
-    //   game_modes::table.on(game_modes::game_title_id.eq(game_title_id)),
-    // )
+    .inner_join(
+      game_modes::table.on(game_modes::game_title_id.eq(game_title_id)),
+    )
     .select(game_configs::all_columns)
     .get_results::<GameConfig>(&**conn)
 }
@@ -48,8 +48,8 @@ pub fn select_configs_for_game_title(
 pub mod tests {
 
   use diesel::{
-    delete, insert_into, result::Error, Connection, ExpressionMethods,
-    PgConnection, QueryDsl, RunQueryDsl,
+    delete, insert_into, Connection, ExpressionMethods, PgConnection, QueryDsl,
+    RunQueryDsl,
   };
   use diesel_migrations::embed_migrations;
 
@@ -69,13 +69,15 @@ pub mod tests {
   }
 
   fn setup() -> Result<(), &'static str> {
-    println!("Running Main!");
     if let Ok(conn) = PgConnection::establish(DB_URL) {
       embed_migrations!();
       embedded_migrations::run_with_output(&conn, &mut std::io::stdout());
       delete(game_configs::table)
         .execute(&conn)
         .expect("Could not clear game_configs");
+      delete(game_titles::table)
+        .execute(&conn)
+        .expect("Could not clear game_titles");
       delete(game_modes::table)
         .execute(&conn)
         .expect("Could not clear game_modes");
@@ -90,6 +92,9 @@ pub mod tests {
       delete(game_modes::table)
         .execute(&conn)
         .expect("Could not clear game_modes");
+      delete(game_titles::table)
+        .execute(&conn)
+        .expect("Could not clear game_titles");
       delete(game_configs::table)
         .execute(&conn)
         .expect("Could not clear game_configs");
@@ -99,7 +104,8 @@ pub mod tests {
   #[test]
   fn test_select_configs_for_game_title() {
     setup();
-    let pool = init_pool(Some(DB_URL.to_string()));
+    // Shorter db connection timeout in test
+    let pool = init_pool(Some(DB_URL.to_string()), Some(1));
     let first_conn = pool.get().expect("Unable to get connection to DB");
     let mut game_mode_pk = game_mode_id_generator();
 
@@ -107,16 +113,19 @@ pub mod tests {
       game_title_id: 1,
       game_name: "TestGame".to_string(),
     };
+    insert_into(game_titles::table)
+      .values(&game_title)
+      .execute(&*first_conn);
 
-    let game_title_id: Vec<i32> = game_titles::table
+    let game_title_id: i32 = game_titles::table
       .filter(game_titles::game_name.eq(&game_title.game_name))
       .select(game_titles::game_title_id)
-      .get_results(&*first_conn)
+      .get_result(&*first_conn)
       .expect("Oops");
 
     let game_mode = GameMode {
       game_mode_id: game_mode_pk.next().unwrap_or(1),
-      game_title_id: game_title_id.clone()[0],
+      game_title_id,
       mode_name: "Test Mode A".to_string(),
       team_size: 5,
     };
@@ -138,19 +147,12 @@ pub mod tests {
       team_size: game_mode.team_size,
     };
 
-    insert_into(game_titles::table)
-      .values(&game_title)
-      .execute(&*first_conn);
-
-    if let Err(e) = insert_into(game_configs::table)
+    insert_into(game_configs::table)
       .values(&game_config)
-      .get_results::<GameConfig>(&*first_conn)
-    {
-      println!("What's crackin? {:?}", e);
-    }
-    println!("Game title ID: {}", game_title_id[0]);
+      .get_results::<GameConfig>(&*first_conn);
+
     if let Ok(configs) =
-      select_configs_for_game_title(&first_conn, game_title_id[0])
+      select_configs_for_game_title(&first_conn, game_title_id)
     {
       assert_eq!(configs.len(), 1);
     }
